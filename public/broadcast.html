@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Video chat Application</title>
+  <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="js/socketcluster.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="js/lib/adapter.js"></script>
+  <script src="//cdn.webrtc-experiment.com/getScreenId.js"></script>
+</head>
+
+<body>
+  <h1>Videochat</h1>
+    <div class="screenShare">
+      <video id="screenshareVideo" controls autoplay playsInline></video>
+      <br><center>
+        <button id="capture-screen">Share</button>
+        <button id="stop-screen">Stop</button>
+      </center>
+    </div>
+    <div id="webcamDiv">
+      <video id="shareVideo" controls autoplay playsInline></video>
+    </div>
+  <script src="js/broadcast.js"></script>
+  <script>
+  </script>
+</body>
+
+</html>

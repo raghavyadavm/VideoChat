@@ -1,23 +1,50 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Video Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-  </head>
-  <body>
-    <div id="videos" style="overflow-x:auto;">
-      <table  border="1" width="50%">
-    		<tr id ="videoTable">
-    			<td>
-    				<video id="localVideo" controls autoplay playsInline></video>
-    			</td>
-    		</tr>
-	    </table>
+
+<head>
+  <title>Video chat Application</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="js/socketcluster.js"></script>
+  <script src="js/lib/adapter.js"></script>
+  <link rel="stylesheet" href="css/main.css">
+  <script src="//cdn.webrtc-experiment.com/getScreenId.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="head">
+      <header>
+        Video Chat
+      </header>
+      <section class="experiment">
+        <div id="chrome-extension-status"></div>
+      </section>
     </div>
-    <script type="text/javascript" src="js/socketcluster.js"></script>
-    <script src="js/lib/adapter.js"></script>
-    <script src="js/main.js"></script>
-  </body>
+    <div class="screenShare">
+      <video id="screenshareVideo" controls autoplay playsInline></video>
+      <br><center>
+        <button id="capture-screen">Share</button>
+        <!-- <button id="stop-screen">Stop</button> -->
+      </center>
+    </div>
+    <div id="webcamDiv">
+    </div>
+    <div class="container">
+      <div class="messages">
+        <ul id="messages-list"></ul>
+      </div>
+      <div class="actions">
+        <form id="form">
+          <input id="message" autocomplete="off" placeholder="Type a message...">
+          <button>Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="js/main.js"></script>
+  <script>
+  </script>
+</body>
+
 </html>
