@@ -321,14 +321,14 @@ function createScreenAnswerPeerConnection(data) {
 
 ////////////////////chat functions////////////////////////////////////
 
-$('form').submit(function() {
-  if ($('#message').val() != '') {
-    client.emit('chat', (name + " : " + $('#message').val()));
+document.getElementById('Submit').onclick = function() {
+  if (document.getElementById("message").value != '') {
+    client.emit('chat', (name + " : " + document.getElementById("message").value));
   }
 
-  $('#message').val('')
+  document.getElementById("message").value = ''
   return false;
-});
+}
 
 var chatChannel = client.subscribe('yell');
 
@@ -337,7 +337,10 @@ chatChannel.on('subscribeFail', function(err) {
 });
 
 chatChannel.watch(function(data) {
-  $('#messages-list').append($('<li>').text(data));
+  var ul = document.getElementById("messages-list");
+  var li = document.createElement("li");
+  li.appendChild(document.createTextNode(data));
+  ul.appendChild(li);
 });
 
 ///////////////////////////////////////////////////////////////////////////////
