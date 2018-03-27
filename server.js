@@ -37,6 +37,7 @@ var options = {
   killMasterOnSignal: true,
   environment: environment,
   protocol: 'https',
+  path :'/socketcluster/',
   protocolOptions: {
     key: fs.readFileSync(__dirname + '/keys/key.pem', 'utf8'),
     cert: fs.readFileSync(__dirname + '/keys/cert.pem', 'utf8')
