@@ -1,0 +1,40 @@
+{
+  "name": "videochat",
+  "description": "WebRTC based video chat",
+  "version": "1.1.0",
+  "contributors": [
+    {
+      "name": "Raghavender Mylagary",
+      "email": "raghavyadav258@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/SocketCluster/socketcluster.git"
+  },
+  "dependencies": {
+    "connect": "3.0.1",
+    "express": "4.14.0",
+    "minimist": "1.1.0",
+    "morgan": "1.7.0",
+    "sc-errors": "^1.4.0",
+    "sc-framework-health-check": "^2.0.0",
+    "sc-hot-reboot": "^1.0.0",
+    "scc-broker-client": "^2.1.2",
+    "serve-static": "1.11.2",
+    "socketcluster": "^10.1.1",
+    "socketcluster-client": "^10.1.2"
+  },
+  "keywords": [
+    "websocket",
+    "server",
+    "realtime",
+    "cluster",
+    "scalable"
+  ],
+  "readmeFilename": "README.md",
+  "scripts": {
+    "start": "node server.js",
+    "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
+  }
+}

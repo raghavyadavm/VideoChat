@@ -1,0 +1,62 @@
+body {
+  margin: 0;
+  padding: 0;
+  color: #666666;
+  font-weight: 300;
+  font-family: 'Roboto';
+  background-color: #F9F9F9;
+}
+a {
+  font-weight: 300;
+  color: #72B963;
+}
+.container {
+  margin: 10vh 10vw ;
+  position: relative;
+  width: 80vw;
+  background-color: #FFFFFF;
+  border: 1px solid #EEEEEE;
+  height: 80vh;
+}
+.container ul {
+  margin: 0;
+  padding: 0;
+}
+.container ul>li {
+  list-style: none;
+  padding: 20px;
+  border-bottom: 1px solid #EEEEEE;
+}
+.container ul>li:nth-child(odd) {
+  background: #F6F5F6;
+}
+.messages {
+  height: 75vh;
+  overflow-y: scroll;
+}
+.actions {
+  position: absolute;
+  bottom: 0;
+  background-color: #CCCCCC;
+  width: 100%;
+  border-top: 1px solid #EEEEEE;
+}
+.actions input {
+  border: 0;
+  margin: 0;
+  font-size: 1em;
+  padding: 1.5vh 1vw;
+  width: 68vw;
+  float: left;
+}
+.actions button {
+  border: 0;
+  margin: 0;
+  width: 10vw;
+  text-align: center;
+  font-size: 1em;
+  padding: 1.5vh 1vw;
+  float: left;
+  background-color: #2ecc71;
+  color: #FFFFFF;
+}
