@@ -1,38 +1,23 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <title>SocketCluster Chat Application</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
-  <link rel="stylesheet" type="text/css" href="css/style.css">
-</head>
-
-<body>
-  <div id="videos">
-    <table id="videoTable" border="1" width="50%">
-      <tr>
-        <tr>
-          <th>
-            Local video
-          </th>
-          <th>
-            'Remote' video
-          </th>
-        </tr>
-        <tr>
-          <td>
-            <video id="localVideo" controls autoplay playsInline></video>
-          </td>
-          <td>
-            <video id="remoteVideo" controls autoplay playsInline></video>
-          </td>
-        </tr>
-    </table>
-  </div>
-  <script type="text/javascript" src="js/socketcluster.js"></script>
-  <script src="js/lib/adapter.js"></script>
-  <script src="js/main.js"></script>
-</body>
-
+  <head>
+    <title>Video Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body>
+    <div id="videos" style="overflow-x:auto;">
+      <table  border="1" width="50%">
+    		<tr id ="videoTable">
+    			<td>
+    				<video id="localVideo" controls autoplay playsInline></video>
+    			</td>
+    		</tr>
+	    </table>
+    </div>
+    <script type="text/javascript" src="js/socketcluster.js"></script>
+    <script src="js/lib/adapter.js"></script>
+    <script src="js/main.js"></script>
+  </body>
 </html>
