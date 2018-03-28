@@ -147,10 +147,8 @@ function screenshareOfferPeerConnection(clientID) {
   });
 
   function handleScreenShareOfferRemoteStreamAdded(event) {
-    if (remoteStream !== event.streams[0]) {
-      remoteStream = event.streams[0];
-      console.log('(GetClientsOffer) Remote stream added.', event.stream[0]);
-    }
+    remoteStream = event.streams[0];
+    console.log('(GetClientsOffer) Remote stream added.', event.streams[0]);
   }
 
   function handleScreenShareOfferIceCandidate(event) {
@@ -269,21 +267,19 @@ function createScreenAnswerPeerConnection(data) {
   }
 
   function handleScreenAnswerRemoteStreamAdded(event) {
-    console.log('(Answer)Remote stream added.');
-    remoteStream = event.streams[0];
 
-    var v = document.getElementById("screenshareVideo");
-    v.autoplay = true;
-    //v.srcObject = event.stream; //assigning stream to the video element
-    v.width = "400";
-    v.height = "200";
-    v.controls = true;
-    v.class = "videoInsert";
-    v.style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-    v.setAttribute('playsInline', '');
-
-    if (v.srcObject !== event.streams[0]) {
-      v.srcObject = event.streams[0];
+    if (event.track.kind === "video") {
+      console.log('(Answer)Remote stream added.');
+      remoteStream = event.streams[0];
+      var v = document.getElementById("screenshareVideo");
+      v.autoplay = true;
+      v.srcObject = event.streams[0]; //assigning stream to the video element
+      v.width = "400";
+      v.height = "200";
+      v.controls = true;
+      v.class = "videoInsert";
+      v.style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
+      v.setAttribute('playsInline', '');
       console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
     }
   }
