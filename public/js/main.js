@@ -19,6 +19,7 @@ var clientsData = [];
 var screenShareStream;
 var spc = [];
 var spc1;
+var events = [];
 
 //STUN server configuration
 var pc_config = {
@@ -111,7 +112,7 @@ function screenshareOfferPeerConnection(clientID) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
     pc.onicecandidate = handleScreenShareOfferIceCandidate;
-    pc.onaddstream = handleScreenShareOfferRemoteStreamAdded;
+    pc.ontrack = handleScreenShareOfferRemoteStreamAdded;
     pc.onremovestream = handleScreenShareOfferRemoteStreamRemoved;
     console.log('Created screenshareOffer RTCPeerConnnection ', pc);
   } catch (e) {
@@ -120,7 +121,15 @@ function screenshareOfferPeerConnection(clientID) {
     return;
   }
 
-  pc.addStream(screenShareStream);
+  screenShareStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        screenShareStream
+      );
+    }
+  );
+
   pc.createOffer(function(offer) {
     // Set Opus as the preferred codec in SDP if Opus is present.
     //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
@@ -138,8 +147,10 @@ function screenshareOfferPeerConnection(clientID) {
   });
 
   function handleScreenShareOfferRemoteStreamAdded(event) {
-    console.log('(GetClientsOffer) Remote stream added.', event.stream);
-    remoteStream = event.stream;
+    if (remoteStream !== event.streams[0]) {
+      remoteStream = event.streams[0];
+      console.log('(GetClientsOffer) Remote stream added.', event.stream[0]);
+    }
   }
 
   function handleScreenShareOfferIceCandidate(event) {
@@ -207,7 +218,7 @@ function createScreenAnswerPeerConnection(data) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
     pc.onicecandidate = handleScreenAnswerIceCandidate;
-    pc.onaddstream = handleScreenAnswerRemoteStreamAdded;
+    pc.ontrack = handleScreenAnswerRemoteStreamAdded;
     pc.onremovestream = handleScreenAnswerRemoteStreamRemoved;
     console.log('Created screenAnswer RTCPeerConnnection ', pc);
   } catch (e) {
@@ -216,7 +227,15 @@ function createScreenAnswerPeerConnection(data) {
     return;
   }
 
-  pc.addStream(localStream);
+  localStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        localStream
+      );
+    }
+  );
+
   pc.setRemoteDescription(new RTCSessionDescription(data.data));
   pc.createAnswer(function(answer) {
     // Set Opus as the preferred codec in SDP if Opus is present.
@@ -251,11 +270,11 @@ function createScreenAnswerPeerConnection(data) {
 
   function handleScreenAnswerRemoteStreamAdded(event) {
     console.log('(Answer)Remote stream added.');
-    remoteStream = event.stream;
+    remoteStream = event.streams[0];
 
     var v = document.getElementById("screenshareVideo");
     v.autoplay = true;
-    v.srcObject = event.stream; //assigning stream to the video element
+    //v.srcObject = event.stream; //assigning stream to the video element
     v.width = "400";
     v.height = "200";
     v.controls = true;
@@ -263,7 +282,10 @@ function createScreenAnswerPeerConnection(data) {
     v.style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
     v.setAttribute('playsInline', '');
 
-    console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+    if (v.srcObject !== event.streams[0]) {
+      v.srcObject = event.streams[0];
+      console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+    }
   }
 
   function handleScreenAnswerRemoteStreamRemoved(event) {
@@ -685,7 +707,7 @@ function createOfferPeerConnection(clientID) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
     pc.onicecandidate = handleOfferIceCandidate;
-    pc.onaddstream = handleOfferRemoteStreamAdded;
+    pc.ontrack = handleOfferRemoteStreamAdded;
     pc.onremovestream = handleOfferRemoteStreamRemoved;
     console.log('Created offer RTCPeerConnnection ', pc);
   } catch (e) {
@@ -694,7 +716,15 @@ function createOfferPeerConnection(clientID) {
     return;
   }
 
-  pc.addStream(localStream);
+  localStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        localStream
+      );
+    }
+  );
+
   pc.createOffer(function(offer) {
     // Set Opus as the preferred codec in SDP if Opus is present.
     //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
@@ -728,28 +758,36 @@ function createOfferPeerConnection(clientID) {
   }
 
   function handleOfferRemoteStreamAdded(event) {
-    console.log('(Offer) Remote stream added.');
 
-    remoteStream = event.stream;
+    events.push(event);
 
-    localScreen[i] = document.createElement("video");
-    localScreen[i].autoplay = true;
-    localScreen[i].srcObject = event.stream; //assigning stream to the video element
-    localScreen[i].width = "400";
-    localScreen[i].height = "200";
-    localScreen[i].controls = true;
-    localScreen[i].class = "videoInsert";
-    localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-    localScreen[i].setAttribute('playsInline', '');
-    var div = document.createElement("div");
-    div.id = clientID;
-    div.className = i;
-    div.appendChild(localScreen[i]);
+    if (event.track.kind === "video") {
+      console.log('(Offer) Remote stream added.');
 
-    document.getElementById("webcamDiv").appendChild(div);
-    i = i + 1;
+      remoteStream = event.streams[0];
 
-    console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
+      localScreen[i] = document.createElement("video");
+      localScreen[i].autoplay = true;
+      //localScreen[i].srcObject = event.stream; //assigning stream to the video element
+      localScreen[i].width = "400";
+      localScreen[i].height = "200";
+      localScreen[i].controls = true;
+      localScreen[i].class = "videoInsert";
+      localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
+      localScreen[i].setAttribute('playsInline', '');
+      localScreen[i].srcObject = event.streams[0];
+
+      var div = document.createElement("div");
+      div.id = clientID;
+      div.className = i;
+      div.appendChild(localScreen[i]);
+
+      document.getElementById("webcamDiv").appendChild(div);
+      i = i + 1;
+
+      console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
+    }
+
   }
 
   function handleOfferRemoteStreamRemoved(event) {
@@ -765,7 +803,7 @@ function createAnswerPeerConnection(data) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
     pc.onicecandidate = handleAnswerIceCandidate;
-    pc.onaddstream = handleAnswerRemoteStreamAdded;
+    pc.ontrack = handleAnswerRemoteStreamAdded;
     pc.onremovestream = handleAnswerRemoteStreamRemoved;
     console.log('Created Answer RTCPeerConnnection ', pc);
   } catch (e) {
@@ -774,7 +812,15 @@ function createAnswerPeerConnection(data) {
     return;
   }
 
-  pc.addStream(localStream);
+  localStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        localStream
+      );
+    }
+  );
+
   pc.setRemoteDescription(new RTCSessionDescription(data.data));
   pc.createAnswer(function(answer) {
     // Set Opus as the preferred codec in SDP if Opus is present.
@@ -807,29 +853,34 @@ function createAnswerPeerConnection(data) {
   }
 
   function handleAnswerRemoteStreamAdded(event) {
-    console.log('(Answer)Remote stream added.');
-    remoteStream = event.stream;
 
-    //create a video element and add it to the DOM
-    localScreen[i] = document.createElement("video");
-    localScreen[i].autoplay = true;
-    localScreen[i].srcObject = event.stream; //assigning stream to the video element
-    localScreen[i].width = "400";
-    localScreen[i].height = "200";
-    localScreen[i].controls = true;
-    localScreen[i].class = "videoInsert";
-    localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-    localScreen[i].setAttribute('playsInline', '');
+    events.push(event);
 
-    var div = document.createElement("div");
-    div.id = data.from;
-    div.className = i;
-    div.appendChild(localScreen[i]);
+    if (event.track.kind === "video") {
+      console.log('(Answer)Remote stream added.');
+      remoteStream = event.streams[0];
 
-    document.getElementById("webcamDiv").appendChild(div);
-    i = i + 1;
+      //create a video element and add it to the DOM
+      localScreen[i] = document.createElement("video");
+      localScreen[i].autoplay = true;
+      //localScreen[i].srcObject = event.stream; //assigning stream to the video element
+      localScreen[i].width = "400";
+      localScreen[i].height = "200";
+      localScreen[i].controls = true;
+      localScreen[i].class = "videoInsert";
+      localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
+      localScreen[i].setAttribute('playsInline', '');
+      localScreen[i].srcObject = event.streams[0];
 
-    console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+      var div = document.createElement("div");
+      div.id = data.from;
+      div.className = i;
+      div.appendChild(localScreen[i]);
+
+      document.getElementById("webcamDiv").appendChild(div);
+      i = i + 1;
+      console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+    }
   }
 
   function handleAnswerRemoteStreamRemoved(event) {
