@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Screenshare firefox</title>
+  </head>
+  <body>
+    <video id='screen' autoplay>
+
+    </video>
+    <script type="text/javascript">
+     navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+     screen_constraints = {
+       video: {
+                 mozMediaSource: 'window',
+                 mediaSource: 'window'
+       }
+     }
+     navigator.getUserMedia(screen_constraints, function (stream) {
+         document.querySelector('video').src = URL.createObjectURL(stream);
+
+         // share this "MediaStream" object using RTCPeerConnection API
+     }, function (error) {
+      console.error('getScreenId error', error);
+
+      alert('Failed to capture your screen. Please check Chrome console logs for further information.');
+    });
+    </script>
+  </body>
+</html>
