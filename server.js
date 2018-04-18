@@ -36,8 +36,12 @@ var options = {
   // If using nodemon, set this to true, and make sure that environment is 'dev'.
   killMasterOnSignal: true,
   environment: environment,
-  protocol: 'http',
-  path :'/'
+  protocol: 'https',
+  path :'/socketcluster/',
+  protocolOptions: {	
+    key: fs.readFileSync(__dirname + '/keys/key.pem', 'utf8'),	
+    cert: fs.readFileSync(__dirname + '/keys/cert.pem', 'utf8')
+  }
 };
 
 var bootTimeout = Number(process.env.SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT) || 10000;
