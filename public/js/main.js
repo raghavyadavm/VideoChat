@@ -1,5 +1,3 @@
-'use strict';
-
 var isChannelReady = false;
 var isInitiator = false;
 var isStarted = false;
@@ -23,17 +21,17 @@ var events = [];
 
 //STUN server configuration
 var pc_config = {
-  'iceServers': [
-   // {
-   // 'urls': 'stun:eskns.com:19302',
-   // },
+  'iceServers': [   
     {
-     'urls':'turn:eskns.com:19302?transport=udp',
-     'username': 'raghav',
-     'credential': 'TOTAL-quota-parameter'
+      'urls': 'stun:eskns.com:19302',
+    },
+    {
+      'urls':'turn:eskns.com:19302?transport=udp',
+      'username': 'raghav',
+      'credential': 'TOTAL-quota-parameter'
     }
   ]//,
-  //"iceTransportPolicy" : "relay"
+  //"iceTransportPolicy":"relay" 
 };
 
 var pc_constraints = {
@@ -45,33 +43,77 @@ var pc_constraints = {
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
   offerToReceiveAudio: true,
-  offerToReceiveVideo: true
+  offerToReceiveVideo: true,
+  iceRestart: true
 };
+
+// Parse a candidate:foo string into an object, for easier use by other methods.
+function parseCandidate(text) {
+  var candidateStr = 'candidate:';
+  var pos = text.indexOf(candidateStr) + candidateStr.length;
+  var [foundation, component, protocol, priority, address, port, , type] =
+    text.substr(pos).split(' ');
+  return {
+    'component': component,
+    'type': type,
+    'foundation': foundation,
+    'protocol': protocol,
+    'address': address,
+    'port': port,
+    'priority': priority
+  };
+}
+
+// Older browsers might not implement mediaDevices at all, so we set an empty object first
+if (navigator.mediaDevices === undefined) {
+  navigator.mediaDevices = {};
+}
+
+// Some browsers partially implement mediaDevices. We can't just assign an object
+// with getUserMedia as it would overwrite existing properties.
+// Here, we will just add the getUserMedia property if it's missing.
+if (navigator.mediaDevices.getUserMedia === undefined) {
+  navigator.mediaDevices.getUserMedia = function(constraints) {
+
+    // First get ahold of the legacy getUserMedia, if present
+    var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+    // Some browsers just don't implement it - return a rejected promise with an error
+    // to keep a consistent interface
+    if (!getUserMedia) {
+      return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+    }
+
+    // Otherwise, wrap the call to the old navigator.getUserMedia with a Promise
+    return new Promise(function(resolve, reject) {
+      getUserMedia.call(navigator, constraints, resolve, reject);
+    });
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 var name = prompt('Enter your name');
 console.log('your name is ', name);
 
+var client = socketCluster.connect();
 //client connecting to server
-var options = {
-   hostname: 'eskns.com',
-   path: '/socketclusterA1a/',
-   secure: true,
-   port: 443,
-   rejectUnauthorized: false // Only necessary during debug if using a self-signed certificate
-};
-var client = socketCluster.connect(options);
+// var client = socketCluster.connect({
+//   hostname: 'localhost',
+//   secure: true,
+//   port: 8004,
+//   rejectUnauthorized: false // Only necessary during debug if using a self-signed certificate
+// });
 console.log(client);
 console.log('screen share clients ', clientsData);
 
 ///////////////////////screenShare())/////////////////////////////////
-//let screen_constraints;
+let screen_constraints;
 
 document.getElementById('capture-screen').onclick = function() {
 
- var screen_constraints = {
+  screen_constraints = {
     video: {
-      mozMediaSource:'window',
+      mozMediaSource: 'window',
       mediaSource: 'window'
     }
   }
@@ -154,6 +196,7 @@ function screenshareOfferPeerConnection(clientID) {
   function handleScreenShareOfferIceCandidate(event) {
     console.log('handleScreenShareOfferIceCandidate event is triggered ', event);
     if (event.candidate) {
+      var c = parseCandidate(event.candidate.candidate);
       client.emit('iceOffer', {
         type: 'candidate',
         label: event.candidate.sdpMLineIndex,
@@ -170,7 +213,6 @@ function screenshareOfferPeerConnection(clientID) {
   function handleScreenShareOfferRemoteStreamRemoved(event) {
     console.log('(screenOffer) Remote stream removed. Event: ', event);
   }
-
   return pc;
 }
 
@@ -190,27 +232,6 @@ screenOfferChannel.watch(function(data) {
     console.log('screenAnswer else case ', data);
   }
 });
-
-// var screenIceOfferChannel = client.subscribe('screenIceOffer');
-//
-// screenIceOfferChannel.on('subscribeFail', function(err) {
-//   console.log('Failed to subscribe to the screenIceOffer channel due to error: ' + err);
-// });
-//
-// screenIceOfferChannel.watch(function(data) {
-//
-//   if (data.to === client.id) {
-//     console.log('screenIceOffer if case ', data);
-//     var candidate = new RTCIceCandidate({
-//       sdpMLineIndex: data.label,
-//       candidate: data.candidate
-//     });
-//     spc1.addIceCandidate(candidate);
-//
-//   } else {
-//     console.log('screenIceOffer else case ', data);
-//   }
-// });
 
 function createScreenAnswerPeerConnection(data) {
   try {
@@ -274,11 +295,7 @@ function createScreenAnswerPeerConnection(data) {
       var v = document.getElementById("screenshareVideo");
       v.autoplay = true;
       v.srcObject = event.streams[0]; //assigning stream to the video element
-      v.width = "400";
-      v.height = "200";
       v.controls = true;
-      v.class = "videoInsert";
-      v.style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
       v.setAttribute('playsInline', '');
       console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
     }
@@ -290,52 +307,6 @@ function createScreenAnswerPeerConnection(data) {
 
   return pc;
 }
-
-// var screenAnswerChannel = client.subscribe('screenAnswer');
-//
-// screenAnswerChannel.on('subscribeFail', function(err) {
-//   console.log('Failed to subscribe to the screenAnswer channel due to error: ' + err);
-// });
-//
-// screenAnswerChannel.watch(function(data) {
-//
-//   if (data.to === client.id) {
-//     for (var i = 0; i < clientsData.length; i++) {
-//       if (clientsData[i] == data.from) {
-//         console.log('this offer belongs to pc[', i, '] ', spc[i], ' of ', clientsList[i]);
-//         spc[i].setRemoteDescription(new RTCSessionDescription(data.data));
-//       }
-//     }
-//     console.log('screenAnswer if case', data);
-//   } else {
-//     console.log('screenAnswer else case ', data);
-//   }
-// });
-//
-// var screenIceAnswerChannel = client.subscribe('screenIceAnswer');
-//
-// screenIceAnswerChannel.on('subscribeFail', function(err) {
-// console.log('Failed to subscribe to the screenIceAnswer channel due to error: ' + err);
-// });
-//
-// screenIceAnswerChannel.watch(function(data) {
-//
-// if (data.to === client.id) {
-//   for (var i = 0; i < clientsData.length; i++) {
-//     if (clientsData[i] == data.from) {
-//       console.log('screenIceAnswer if case ', data);
-//       //pc1 = createAnswerPeerConnection(data);
-//       var candidate = new RTCIceCandidate({
-//         sdpMLineIndex: data.label,
-//         candidate: data.candidate
-//       });
-//       spc[i].addIceCandidate(candidate);
-//     }
-//   }
-// } else {
-//   console.log('screenIceAnswer else case ', data);
-// }
-// });
 
 ////////////////////chat functions////////////////////////////////////
 
@@ -355,9 +326,18 @@ chatChannel.on('subscribeFail', function(err) {
 });
 
 chatChannel.watch(function(data) {
+  let newData = anchorme(data,{
+    attributes:[
+      {
+        name:"target",
+        value:"_blank"
+      }
+    ],
+    truncate: 20
+  });
   var ul = document.getElementById("messages-list");
   var li = document.createElement("li");
-  li.appendChild(document.createTextNode(data));
+  li.innerHTML= newData;
   ul.appendChild(li);
 });
 
@@ -370,14 +350,14 @@ if (room !== '') {
   console.log('Attempted to create or join room: ', room);
 }
 
-//var clientsListBroadcastChannel = client.subscribe('clientsListBroadcast');
-//clientsListBroadcastChannel.on('subscribeFail', function(err) {
- // console.log('Failed to subscribe to the clientsListBroadcast channel due to error: ' + err);
-//});
-//clientsListBroadcastChannel.watch(function(data) {
-  //console.log('clientsListBroadcastChannel data is ', data);
-//  clientsData = data;
-//});
+// var clientsListBroadcastChannel = client.subscribe('clientsListBroadcast');
+// clientsListBroadcastChannel.on('subscribeFail', function(err) {
+//   console.log('Failed to subscribe to the clientsListBroadcast channel due to error: ' + err);
+// });
+// clientsListBroadcastChannel.watch(function(data) {
+//   console.log('clientsListBroadcastChannel data is ', data);
+//   //clientsData = data;
+// });
 
 var clientsDisconnectChannel = client.subscribe('clientsDisconnect');
 clientsDisconnectChannel.on('subscribeFail', function(err) {
@@ -463,6 +443,360 @@ client.on('joined', function(clients) {
   isChannelReady = true;
 });
 
+///////////////////activeVoice()////////////////////////////////////////////////
+
+function activeVoice(stream, div) {
+  var speechEvents = hark(stream, {});
+  speechEvents.on('speaking', function() {
+    console.log('speaking');
+    div.style.border="3px solid yellow";      
+  });
+
+  speechEvents.on('stopped_speaking', function() {
+    console.log('stopped_speaking');
+    div.style.border="3px solid black";
+  });
+}
+
+//////////////////getUserMedia()///////////////////
+
+function getMediaStream() {
+
+  console.log('media stream');
+  var constraints = window.constraints = {
+    audio: true,
+    video: true
+  };
+
+  function handleSuccess(stream) {
+    console.log('Adding local stream.');
+    var videoTracks = stream.getVideoTracks();
+    console.log('Got stream with constraints:', constraints);
+    console.log('Using video device: ' + videoTracks[0].label);
+    stream.oninactive = function() {
+      console.log('Stream inactive');
+    };
+    window.stream = stream; // make variable available to browser console
+
+    //create a video element and add it to the DOM
+    localScreen[i] = document.createElement("video");
+    //document.getElementById("videoDiv").appendChild(localScreen[i]);
+    //localScreen[i].id = 'localScreen[i]';
+    localScreen[i].autoplay = true;
+    localScreen[i].srcObject = stream; //assigning stream to the video element
+    localScreen[i].id = 'video';
+    localScreen[i].controls = true;
+    localScreen[i].muted = true;
+    localScreen[i].class = "videoInsert";
+    localScreen[i].style = 'width: 100%;height: 100%;';
+    localScreen[i].setAttribute('playsInline', ''); 
+
+    var div = document.createElement("div");
+    div.id = i;
+    div.className = 'videoDiv';
+    div.appendChild(localScreen[i]);
+
+    document.getElementById("webcamDiv").appendChild(div);
+    i = i + 1;
+    localStream = stream;
+
+    sendMessage('got user media');
+  }
+
+  function handleError(error) {
+    if (error.name === 'ConstraintNotSatisfiedError') {
+      errorMsg('The resolution ' + constraints.video.width.exact + 'x' +
+        constraints.video.width.exact + ' px is not supported by your device.');
+    } else if (error.name === 'PermissionDeniedError') {
+      errorMsg('Permissions have not been granted to use your camera and ' +
+        'microphone, you need to allow the page access to your devices in ' +
+        'order for the demo to work.');
+    }
+    errorMsg('getUserMedia error: ' + error.name, error);
+  }
+
+  function errorMsg(msg, error) {
+    console.log('<p>' + msg + '</p>');
+    if (typeof error !== 'undefined') {
+      console.error(error);
+    }
+  }
+
+  navigator.mediaDevices.getUserMedia(constraints).
+  then(handleSuccess).catch(handleError);
+
+  console.log('Getting user media with constraints', constraints);
+}
+
+//////////////////sendMessage()///////////////////
+
+function sendMessage(message) {
+  if ((message.type === 'candidate')) {
+
+  } else {
+    console.log('Client sending message: ', message);
+  }
+  client.emit('msg', message);
+}
+
+var msgChannel = client.subscribe('messagebroadcast');
+
+msgChannel.on('subscribeFail', function(err) {
+  console.log('Failed to subscribe to the msg channel due to error: ' + err);
+});
+
+msgChannel.watch(function(data) {
+  var message = data.msg;
+  if (data.id === client.id) {
+    if (message === 'got user media') {
+      console.log('Client received message:', message);
+      maybeStart();
+    }
+  } else {
+
+  }
+});
+
+///////////////////////////maybeStart()/////////////////////////////////////
+
+function maybeStart() {
+  console.log('>>>>>>> maybeStart() ', localStream, isNew);
+  if (typeof localStream !== 'undefined' && isNew) {
+    offer();
+    for (var i = 0; i < clientsData.length; i++) {
+      if (clientsData[i] === client.id) {
+        //console.log('own id');
+      } else {
+        console.log('sd for pc[', i, '] is', pc[i].localDescription);
+      }
+    }
+  }
+}
+
+window.onbeforeunload = function() {
+  sendMessage('bye');
+};
+
+///////////////////////////////offer()/////////////////////////////////////////
+
+function offer() {
+  console.log('clientsData.length ', clientsData.length);
+  for (var i = 0; i < clientsData.length; i++) {
+    if (clientsData[i] === client.id) {
+      //console.log('own id');
+    } else {
+      //clientsList[i]
+      console.log('>>>>>> creating peer connection for ', clientsData[i], ' by ', client.id);
+      pc[i] = createOfferPeerConnection(clientsData[i]);
+    }
+  }
+}
+
+////////////////createOfferPeerConnection(()////////////////////////////////////
+
+function createOfferPeerConnection(clientID) {
+  try {
+    var pc = new RTCPeerConnection(pc_config, pc_constraints);
+    pc.onicecandidate = handleOfferIceCandidate;
+    pc.oniceconnectionstatechange = handleOfferIceCandidateStateChange;
+    pc.ontrack = handleOfferRemoteStreamAdded;
+    pc.onremovestream = handleOfferRemoteStreamRemoved;
+    console.log('Created offer RTCPeerConnnection ', pc, ' for ', clientID);
+  } catch (e) {
+    console.log('Failed to create offer PeerConnection for ', clientID, 'exception: ' + e.message);
+    alert('Cannot create offer RTCPeerConnection object for ', clientID);
+    return;
+  }
+
+  localStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        localStream
+      );
+    }
+  );
+
+  pc.createOffer(function(offer) {
+    // Set Opus as the preferred codec in SDP if Opus is present.
+    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+    console.log('pc[ ] ', pc, ' for ', clientID);
+    pc.setLocalDescription(offer);
+    console.log('setLocalDescription for offer ', offer, ' id ', clientID);
+    console.table(offer);
+    client.emit('offer', {
+      data: offer,
+      from: client.id,
+      to: clientID
+    });
+    //sendMessage(sessionDescription);
+  }, function(err) {
+    console.log('error', err);
+  });
+
+  function handleOfferIceCandidate(event) {
+    console.log('handleOfferIceCandidate event is triggered ', event);
+    if (event.candidate) {
+      var c = parseCandidate(event.candidate.candidate);
+      client.emit('iceOffer', {
+        type: 'candidate',
+        label: event.candidate.sdpMLineIndex,
+        id: event.candidate.sdpMid,
+        candidate: event.candidate.candidate,
+        from: client.id,
+        to: clientID
+      });
+    } else {
+      console.log('End of candidates for offer.');
+    }
+  }
+
+  function handleOfferIceCandidateStateChange(event) {
+    if (pc.iceConnectionState === "failed") {
+
+    } 
+    if(pc.iceConnectionState === "disconnected") {
+
+    } 
+    if(pc.iceConnectionState === "closed") {
+      // Handle the failure
+    }  
+  };
+
+  function handleOfferRemoteStreamAdded(event) {
+
+    events.push(event);
+
+    if (event.track.kind === "video") {
+      console.log('(Offer) Remote stream added.');
+
+      remoteStream = event.streams[0];
+
+      localScreen[i] = document.createElement("video");
+      localScreen[i].autoplay = true;
+      localScreen[i].id = 'video';
+      localScreen[i].controls = true;
+      localScreen[i].class = "videoInsert";
+      localScreen[i].setAttribute('playsInline', '');
+      localScreen[i].style = 'width: 100%;height: 100%;';
+      localScreen[i].srcObject = event.streams[0];
+
+      var div = document.createElement("div");
+      div.id = clientID;
+      div.className = 'videoDiv';
+      div.appendChild(localScreen[i]);
+
+      activeVoice(event.streams[0], div);
+
+      document.getElementById("webcamDiv").appendChild(div);
+      i = i + 1;
+
+      console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
+    }
+
+  }
+
+  function handleOfferRemoteStreamRemoved(event) {
+    console.log('(Offer) Remote stream removed. Event: ', event);
+  }
+
+  return pc;
+}
+
+////////////////createAnswerPeerConnection(()//////////////////////////////////
+
+function createAnswerPeerConnection(data) {
+  try {
+    var pc = new RTCPeerConnection(pc_config, pc_constraints);
+    pc.onicecandidate = handleAnswerIceCandidate;
+    pc.ontrack = handleAnswerRemoteStreamAdded;
+    pc.onremovestream = handleAnswerRemoteStreamRemoved;
+    console.log('Created Answer RTCPeerConnnection ', pc, ' for ', data.from);
+  } catch (e) {
+    console.log('Failed to create Answer PeerConnection,for ', data.from, ' exception: ' + e.message);
+    alert('Cannot create Answer RTCPeerConnection object.');
+    return;
+  }
+
+  localStream.getTracks().forEach(
+    function(track) {
+      pc.addTrack(
+        track,
+        localStream
+      );
+    }
+  );
+
+  pc.setRemoteDescription(new RTCSessionDescription(data.data));
+  pc.createAnswer(function(answer) {
+    // Set Opus as the preferred codec in SDP if Opus is present.
+    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+    console.log('pc[ ] ', pc, ' for ', data.from);
+    pc.setLocalDescription(answer);
+    console.log('setLocalDescription for answer ', answer, ' id ', data.from);
+    client.emit('answer', {
+      data: answer,
+      from: data.to,
+      to: data.from
+    });
+  }, function(err) {
+    console.log('error', err);
+  });
+
+  function handleAnswerIceCandidate(event) {
+    console.log('handleAnswerIceCandidate event is triggered ', event);
+    if (event.candidate) {
+      client.emit('iceAnswer', {
+        type: 'candidate',
+        label: event.candidate.sdpMLineIndex,
+        id: event.candidate.sdpMid,
+        candidate: event.candidate.candidate,
+        from: client.id,
+        to: data.from
+      });
+    } else {
+      console.log('End of candidates Answer.');
+    }
+  }
+
+  function handleAnswerRemoteStreamAdded(event) {
+
+    events.push(event);
+
+    if (event.track.kind === "video") {
+      console.log('(Answer)Remote stream added.');
+      remoteStream = event.streams[0];
+
+      //create a video element and add it to the DOM
+      localScreen[i] = document.createElement("video");
+      localScreen[i].autoplay = true;
+      localScreen[i].id = 'video';
+      localScreen[i].controls = true;
+      localScreen[i].class = "videoInsert";
+      localScreen[i].setAttribute('playsInline', '');
+      localScreen[i].style = 'width: 100%;height: 100%;';
+      localScreen[i].srcObject = event.streams[0];
+
+      var div = document.createElement("div");
+      div.id = data.from;
+      div.className = 'videoDiv';
+      div.appendChild(localScreen[i]);
+
+      activeVoice(event.streams[0], div);
+
+      document.getElementById("webcamDiv").appendChild(div);
+      i = i + 1;
+      console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+    }
+  }
+
+  function handleAnswerRemoteStreamRemoved(event) {
+    console.log('(Answer)Remote stream removed. Event: ', event);
+  }
+
+  return pc;
+}
+
 /////////////////////offerChannel//////////////////////////////////////////////
 
 var offerChannel = client.subscribe('offer');
@@ -521,7 +855,11 @@ if (data.to === client.id) {
     sdpMLineIndex: data.label,
     candidate: data.candidate
   });
-  pc1.addIceCandidate(candidate);
+  pc1.addIceCandidate(candidate).then(_=>{
+    // Do stuff when the candidate is successfully passed to the ICE agent
+  }).catch(e=>{
+    console.log("Error: Failure during iceOffer addIceCandidate()");
+  });
 
 } else {
   console.log('iceOffer else case ', data);
@@ -547,7 +885,11 @@ if (data.to === client.id) {
         sdpMLineIndex: data.label,
         candidate: data.candidate
       });
-      pc[i].addIceCandidate(candidate);
+      pc[i].addIceCandidate(candidate).then(_=>{
+        // Do stuff when the candidate is successfully passed to the ICE agent
+      }).catch(e=>{
+        console.log("Error: Failure during iceAnswer addIceCandidate()");
+      });
     }
   }
 } else {
@@ -555,336 +897,4 @@ if (data.to === client.id) {
 }
 });
 
-//////////////////getUserMedia()///////////////////
-
-function getMediaStream() {
-
-  console.log('media stream');
-  var constraints = window.constraints = {
-    audio: true,
-    video: true
-  };
-
-  function handleSuccess(stream) {
-    console.log('Adding local stream.');
-    var videoTracks = stream.getVideoTracks();
-    console.log('Got stream with constraints:', constraints);
-    console.log('Using video device: ' + videoTracks[0].label);
-    stream.oninactive = function() {
-      console.log('Stream inactive');
-    };
-    window.stream = stream; // make variable available to browser console
-
-    //create a video element and add it to the DOM
-    localScreen[i] = document.createElement("video");
-    //document.getElementById("videoDiv").appendChild(localScreen[i]);
-    //localScreen[i].id = 'localScreen[i]';
-    localScreen[i].autoplay = true;
-    localScreen[i].srcObject = stream; //assigning stream to the video element
-    localScreen[i].width = "400";
-    localScreen[i].height = "200";
-    localScreen[i].controls = true;
-    localScreen[i].muted = true;
-    localScreen[i].class = "videoInsert";
-    localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-    localScreen[i].setAttribute('playsInline', '');
-
-    var div = document.createElement("div");
-    div.id = i;
-    div.className = i;
-    div.appendChild(localScreen[i]);
-
-    document.getElementById("webcamDiv").appendChild(div);
-    i = i + 1;
-    localStream = stream;
-
-    sendMessage('got user media');
-  }
-
-  function handleError(error) {
-    if (error.name === 'ConstraintNotSatisfiedError') {
-      errorMsg('The resolution ' + constraints.video.width.exact + 'x' +
-        constraints.video.width.exact + ' px is not supported by your device.');
-    } else if (error.name === 'PermissionDeniedError') {
-      errorMsg('Permissions have not been granted to use your camera and ' +
-        'microphone, you need to allow the page access to your devices in ' +
-        'order for the demo to work.');
-    }
-    ('getUserMedia error: ' + error.name, error);
-  }
-
-  function errorMsg(msg, error) {
-    console.log('<p>' + msg + '</p>');
-    if (typeof error !== 'undefined') {
-      console.error(error);
-    }
-  }
-
-  navigator.mediaDevices.getUserMedia(constraints).
-  then(handleSuccess).catch(handleError);
-
-  console.log('Getting user media with constraints', constraints);
-}
-
-//////////////////sendMessage()///////////////////
-
-function sendMessage(message) {
-  if ((message.type === 'candidate')) {
-
-  } else {
-    console.log('Client sending message: ', message);
-  }
-  client.emit('msg', message);
-}
-
-var msgChannel = client.subscribe('messagebroadcast');
-
-msgChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the msg channel due to error: ' + err);
-});
-
-msgChannel.watch(function(data) {
-  var message = data.msg;
-  if (data.id === client.id) {
-    if (message === 'got user media') {
-      console.log('Client received message:', message);
-      maybeStart();
-    }
-  } else {
-
-  }
-});
-
-///////////////////////////maybeStart()/////////////////////////////////////
-
-// if (location.hostname !== 'localhost') {
-//   requestTurn(
-//     'https://computeengineondemand.appspot.com/turn?username=41784574&key=4080218913'
-//   );
-// }
-
-function maybeStart() {
-  console.log('>>>>>>> maybeStart() ', localStream, isNew);
-  if (typeof localStream !== 'undefined' && isNew) {
-    offer();
-    for (var i = 0; i < clientsData.length; i++) {
-      if (clientsData[i] === client.id) {
-        //console.log('own id');
-      } else {
-        console.log('sd for pc[', i, '] is', pc[i].localDescription);
-      }
-
-    }
-  }
-}
-
-window.onbeforeunload = function() {
-  sendMessage('bye');
-};
-
-///////////////////////////////offer()/////////////////////////////////////////
-
-function offer() {
-  console.log('clientsData.length ', clientsData.length);
-  for (var i = 0; i < clientsData.length; i++) {
-    if (clientsData[i] === client.id) {
-      //console.log('own id');
-    } else {
-      //clientsList[i]
-      console.log('>>>>>> creating peer connection for  ', clientsData[i], ' by ', client.id);
-      pc[i] = createOfferPeerConnection(clientsData[i]);
-    }
-  }
-}
-
-////////////////createOfferPeerConnection(()////////////////////////////////////
-
-function createOfferPeerConnection(clientID) {
-  try {
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleOfferIceCandidate;
-    pc.ontrack = handleOfferRemoteStreamAdded;
-    pc.onremovestream = handleOfferRemoteStreamRemoved;
-    console.log('Created offer RTCPeerConnnection ', pc, ' for ', clientID);
-  } catch (e) {
-    console.log('Failed to create offer PeerConnection, exception: ' + e.message);
-    alert('Cannot create offer RTCPeerConnection object.');
-    return;
-  }
-
-  localStream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        localStream
-      );
-    }
-  );
-
-  pc.createOffer(function(offer) {
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-    console.log('pc[ ]', pc, ' for ', clientID);
-    pc.setLocalDescription(offer);
-    console.log('setLocalDescription for offer ', offer, ' id ', clientID);
-    client.emit('offer', {
-      data: offer,
-      from: client.id,
-      to: clientID
-    });
-    //sendMessage(sessionDescription);
-  }, function(err) {
-    console.log('error', err);
-  });
-
-  function handleOfferIceCandidate(event) {
-    console.log('handleOfferIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      client.emit('iceOffer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: clientID
-      });
-    } else {
-      console.log('End of candidates for offer.');
-    }
-  }
-
-  function handleOfferRemoteStreamAdded(event) {
-
-    events.push(event);
-
-    if (event.track.kind === "video") {
-      console.log('(Offer) Remote stream added.');
-
-      remoteStream = event.streams[0];
-
-      localScreen[i] = document.createElement("video");
-      localScreen[i].autoplay = true;
-      //localScreen[i].srcObject = event.stream; //assigning stream to the video element
-      localScreen[i].width = "400";
-      localScreen[i].height = "200";
-      localScreen[i].controls = true;
-      localScreen[i].class = "videoInsert";
-      localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-      localScreen[i].setAttribute('playsInline', '');
-      localScreen[i].srcObject = event.streams[0];
-
-      var div = document.createElement("div");
-      div.id = clientID;
-      div.className = i;
-      div.appendChild(localScreen[i]);
-
-      document.getElementById("webcamDiv").appendChild(div);
-      i = i + 1;
-
-      console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
-    }
-
-  }
-
-  function handleOfferRemoteStreamRemoved(event) {
-    console.log('(Offer) Remote stream removed. Event: ', event);
-  }
-
-  return pc;
-}
-
-////////////////createAnswerPeerConnection(()//////////////////////////////////
-
-function createAnswerPeerConnection(data) {
-  try {
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleAnswerIceCandidate;
-    pc.ontrack = handleAnswerRemoteStreamAdded;
-    pc.onremovestream = handleAnswerRemoteStreamRemoved;
-    console.log('Created Answer RTCPeerConnnection ', pc, ' for ', data.from);
-  } catch (e) {
-    console.log('Failed to create Answer PeerConnection, exception: ' + e.message);
-    alert('Cannot create Answer RTCPeerConnection object.');
-    return;
-  }
-
-  localStream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        localStream
-      );
-    }
-  );
-
-  pc.setRemoteDescription(new RTCSessionDescription(data.data));
-  pc.createAnswer(function(answer) {
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-    console.log('pc[] ', pc, ' for ', data.from);
-    pc.setLocalDescription(answer);
-    console.log('setLocalDescription for answer ', answer, ' id ', data.from);
-    //console.log('answer', answer, ' id ', data);
-    client.emit('answer', {
-      data: answer,
-      from: data.to,
-      to: data.from
-    });
-  }, function(err) {
-    console.log('error', err);
-  });
-
-  function handleAnswerIceCandidate(event) {
-    console.log('handleAnswerIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      client.emit('iceAnswer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: data.from
-      });
-    } else {
-      console.log('End of candidates Answer.');
-    }
-  }
-
-  function handleAnswerRemoteStreamAdded(event) {
-
-    events.push(event);
-
-    if (event.track.kind === "video") {
-      console.log('(Answer)Remote stream added.');
-      remoteStream = event.streams[0];
-
-      //create a video element and add it to the DOM
-      localScreen[i] = document.createElement("video");
-      localScreen[i].autoplay = true;
-      //localScreen[i].srcObject = event.stream; //assigning stream to the video element
-      localScreen[i].width = "400";
-      localScreen[i].height = "200";
-      localScreen[i].controls = true;
-      localScreen[i].class = "videoInsert";
-      localScreen[i].style = "display:block; margin: 0 auto; width: 50% !important; height: 70% !important; position: relative";
-      localScreen[i].setAttribute('playsInline', '');
-      localScreen[i].srcObject = event.streams[0];
-
-      var div = document.createElement("div");
-      div.id = data.from;
-      div.className = i;
-      div.appendChild(localScreen[i]);
-
-      document.getElementById("webcamDiv").appendChild(div);
-      i = i + 1;
-      console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
-    }
-  }
-
-  function handleAnswerRemoteStreamRemoved(event) {
-    console.log('(Answer)Remote stream removed. Event: ', event);
-  }
-
-  return pc;
-}
 ///////////////////////////////////////////////////////////////////////////////
