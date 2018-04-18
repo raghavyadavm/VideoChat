@@ -4,28 +4,25 @@
 <head>
   <title>Video chat Application</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Raghavender Mylagary">
   <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
-  <script type="text/javascript" src="/virtualchat/js/socketcluster.js"></script>
-  <script src="/virtualchat/js/lib/adapter.js"></script>
-  <link rel="stylesheet" href="/virtualchat/css/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script type="text/javascript" src="js/socketcluster.js"></script>
+  <script src="js/lib/adapter.js"></script>
+  <script src="js/anchorme.min.js"></script>
+  <script src="js/hark.bundle.js"></script>
+  <link rel="stylesheet" href="css/main.css">
 </head>
 
 <body>
   <div class="wrapper">
     <div class="head">
-      <header>
-        Video Chat
-      </header>
-      <section class="experiment">
-        <div id="chrome-extension-status"></div>
-      </section>
+      <button class="btn" id="capture-screen">
+        <i class="fa fa-desktop" aria-hidden="true"> ScreenShare</i>
+      </button>
     </div>
     <div class="screenShare">
-      <video id="screenshareVideo" controls autoplay playsInline></video>
-      <br><center>
-        <button id="capture-screen">Share</button>
-        <!-- <button id="stop-screen">Stop</button> -->
-      </center>
+      <video id="screenshareVideo" controls autoplay playsInline></video>      
     </div>
     <div id="webcamDiv">
     </div>
@@ -41,7 +38,7 @@
       </div>
     </div>
   </div>
-  <script src="/virtualchat/js/main.js"></script>
+  <script src="js/main.js"></script>
   <script>
   </script>
 </body>
