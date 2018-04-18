@@ -5,6 +5,7 @@ var path = require('path');
 var morgan = require('morgan');
 var healthChecker = require('sc-framework-health-check');
 
+
 class Worker extends SCWorker {
   run() {
     console.log('   >> Worker PID:', process.pid);
