@@ -129,26 +129,6 @@ class Worker extends SCWorker {
         );
         scServer.exchange.publish("removeVideo", server.id);
       });
-
-      server.on("screenOffer", function(data) {
-        log.info("screenOffer ", data);
-        scServer.exchange.publish("screenOffer", data);
-      });
-
-      server.on("screenAnswer", function(data) {
-        log.info("screenAnswer ", data);
-        scServer.exchange.publish("screenAnswer", data);
-      });
-
-      server.on("screenIceAnswer", function(data) {
-        log.info("screenIceAnswer ", data);
-        scServer.exchange.publish("screenIceAnswer", data);
-      });
-
-      server.on("screenIceOffer", function(data) {
-        log.info("screenIceOffer ", data);
-        scServer.exchange.publish("screenIceOffer", data);
-      });
     });
   }
 }

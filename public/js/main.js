@@ -2,22 +2,14 @@ var isChannelReady = false;
 var isInitiator = false;
 var isStarted = false;
 var isNew = false;
-var localStream;
+var localStream, remoteStream, screenShareStream;
 var pc = [];
 var pc1;
 var clientsList = [];
-var remoteStream;
-var turnReady;
 var chatChannel;
-var i = 0;
-var localScreen = [];
-var localScreenMaterial = [];
-var localScreenTexture = [];
 var clientsData = [];
-var screenShareStream;
-var spc = [];
-var spc1;
 var events = [];
+var screenFlag = false;
 
 //STUN server configuration
 var pc_config = {
@@ -121,7 +113,9 @@ document.getElementById('capture-screen').onclick = function() {
   function handleScreenSuccess(stream) {
     document.getElementById('screenshareVideo').srcObject = stream;
     screenShareStream = stream;
-    screenshareOffer(stream);
+    //screenshareOffer(stream);
+    var screenFlag = true;
+    offer(stream, screenFlag);
 
     stream.oninactive = stream.onended = function() {
       document.getElementById('screenshareVideo').srcObject = null;
@@ -130,184 +124,11 @@ document.getElementById('capture-screen').onclick = function() {
 
   function handleScreenError(error) {
     console.error('getScreenId error', error);
-
     alert('Failed to capture your screen.');
   }
   navigator.mediaDevices.getUserMedia(screen_constraints)
     .then(handleScreenSuccess).catch(handleScreenError);
 };
-
-///////////////////screenshareOffer()/////////////////////////////////
-
-function screenshareOffer(stream) {
-  for (var i = 0; i < clientsData.length; i++) {
-    if (clientsData[i] === client.id) {
-      //console.log('own id');
-    } else {
-      console.log('>>>>>> creating screen peer connection ', i, ' for ', clientsData[i]);
-      pc[i] = screenshareOfferPeerConnection(clientsData[i]);
-    }
-  }
-}
-
-function screenshareOfferPeerConnection(clientID) {
-  try {
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleScreenShareOfferIceCandidate;
-    pc.ontrack = handleScreenShareOfferRemoteStreamAdded;
-    pc.onremovestream = handleScreenShareOfferRemoteStreamRemoved;
-    console.log('Created screenshareOffer RTCPeerConnnection ', pc);
-  } catch (e) {
-    console.log('Failed to create screenshareOffer PeerConnection, exception: ' + e.message);
-    alert('Cannot create screenshareOffer RTCPeerConnection object.');
-    return;
-  }
-
-  screenShareStream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        screenShareStream
-      );
-    }
-  );
-
-  pc.createOffer(function(offer) {
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-    console.log('screenpcoffer[ ]', pc);
-    pc.setLocalDescription(offer);
-    console.log('setLocalDescription for screenOffer ', offer, ' id ', clientID);
-    client.emit('screenOffer', {
-      data: offer,
-      from: client.id,
-      to: clientID
-    });
-    //sendMessage(sessionDescription);
-  }, function(err) {
-    console.log('screenOffererror', err);
-  });
-
-  function handleScreenShareOfferRemoteStreamAdded(event) {
-    remoteStream = event.streams[0];
-    console.log('(GetClientsOffer) Remote stream added.', event.streams[0]);
-  }
-
-  function handleScreenShareOfferIceCandidate(event) {
-    console.log('handleScreenShareOfferIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      var c = parseCandidate(event.candidate.candidate);
-      client.emit('iceOffer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: clientID
-      });
-    } else {
-      console.log('End of candidates for screenIceOffer.');
-    }
-  }
-
-  function handleScreenShareOfferRemoteStreamRemoved(event) {
-    console.log('(screenOffer) Remote stream removed. Event: ', event);
-  }
-  return pc;
-}
-
-var screenOfferChannel = client.subscribe('screenOffer');
-
-screenOfferChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the screenOffer channel due to error: ' + err);
-});
-
-screenOfferChannel.watch(function(data) {
-
-  if (data.to === client.id) {
-    console.log('screenAnswer if case ', data.data.type);
-    pc1 = createScreenAnswerPeerConnection(data);
-
-  } else {
-    console.log('screenAnswer else case ', data);
-  }
-});
-
-function createScreenAnswerPeerConnection(data) {
-  try {
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleScreenAnswerIceCandidate;
-    pc.ontrack = handleScreenAnswerRemoteStreamAdded;
-    pc.onremovestream = handleScreenAnswerRemoteStreamRemoved;
-    console.log('Created screenAnswer RTCPeerConnnection ', pc);
-  } catch (e) {
-    console.log('Failed to create screenAnswer PeerConnection, exception: ' + e.message);
-    alert('Cannot create screenAnswer RTCPeerConnection object.');
-    return;
-  }
-
-  localStream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        localStream
-      );
-    }
-  );
-
-  pc.setRemoteDescription(new RTCSessionDescription(data.data));
-  pc.createAnswer(function(answer) {
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-    console.log('screenpcanswer[ ]', pc);
-    pc.setLocalDescription(answer);
-    console.log('answer', answer, ' id ', data);
-    client.emit('answer', {
-      data: answer,
-      from: data.to,
-      to: data.from
-    });
-  }, function(err) {
-    console.log('screenAnswererror', err);
-  });
-
-  function handleScreenAnswerIceCandidate(event) {
-    console.log('handleAnswerIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      client.emit('iceAnswer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: data.from
-      });
-    } else {
-      console.log('End of candidates screenIceAnswer.');
-    }
-  }
-
-  function handleScreenAnswerRemoteStreamAdded(event) {
-
-    if (event.track.kind === "video") {
-      console.log('(Answer)Remote stream added.');
-      remoteStream = event.streams[0];
-      var v = document.getElementById("screenshareVideo");
-      v.autoplay = true;
-      v.srcObject = event.streams[0]; //assigning stream to the video element
-      v.controls = true;
-      v.setAttribute('playsInline', '');
-      console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
-    }
-  }
-
-  function handleScreenAnswerRemoteStreamRemoved(event) {
-    console.log('(ScreenAnswer)Remote stream removed. Event: ', event);
-  }
-
-  return pc;
-}
-
 ////////////////////chat functions////////////////////////////////////
 
 document.getElementById('Submit').onclick = function() {
@@ -350,36 +171,29 @@ if (room !== '') {
   console.log('Attempted to create or join room: ', room);
 }
 
-// var clientsListBroadcastChannel = client.subscribe('clientsListBroadcast');
-// clientsListBroadcastChannel.on('subscribeFail', function(err) {
-//   console.log('Failed to subscribe to the clientsListBroadcast channel due to error: ' + err);
-// });
-// clientsListBroadcastChannel.watch(function(data) {
-//   console.log('clientsListBroadcastChannel data is ', data);
-//   //clientsData = data;
-// });
-
 var clientsDisconnectChannel = client.subscribe('clientsDisconnect');
 clientsDisconnectChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the clientsDisconnect channel due to error: ' + err);
+  console.error('Failed to subscribe to the clientsDisconnect channel due to error: ' + err);
 });
 clientsDisconnectChannel.watch(function(data) {
-  console.log('clientsDisconnectChannel data is ', data);
+  console.log('clientsDisconnectChannel data is ');
+  console.table(data);
   clientsData = data;
 });
 
 var clientsConnectedChannel = client.subscribe('clientsConnected');
 clientsConnectedChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the clientsConnected channel due to error: ' + err);
+  console.error('Failed to subscribe to the clientsConnected channel due to error: ' + err);
 });
 clientsConnectedChannel.watch(function(data) {
-  console.log('clientsConnectedChannel data is ', data);
+  console.log('clientsConnectedChannel data is ');
+  console.table(data);
   clientsData = data;
 });
 
 var removeVideoChannel = client.subscribe('removeVideo');
 removeVideoChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the removeVideo channel due to error: ' + err);
+  console.error('Failed to subscribe to the removeVideo channel due to error: ' + err);
 });
 removeVideoChannel.watch(function(data) {
   console.log('removeVideoChannel data is ', data);
@@ -395,7 +209,7 @@ client.on('created', function(room) {
 client.on('askClientToSubscribe', function(room) {
   chatChannel = client.subscribe(room);
   chatChannel.on('subscribeFail', function(err) {
-    console.log('Failed to subscribe to hello channel due to error: ', err);
+    console.error('Failed to subscribe to hello channel due to error: ', err);
   });
 
   chatChannel.watch(function(room) {
@@ -411,7 +225,7 @@ client.on('full', function(room) {
 var joinChannel = client.subscribe('join');
 
 joinChannel.on('subscribeFail', function(err) {
-  console.log('Failed to subscribe to the join channel due to error: ' + err);
+  console.error('Failed to subscribe to the join channel due to error: ' + err);
 });
 
 joinChannel.watch(function(data) {
@@ -448,14 +262,36 @@ client.on('joined', function(clients) {
 function activeVoice(stream, div) {
   var speechEvents = hark(stream, {});
   speechEvents.on('speaking', function() {
-    console.log('speaking');
+    // console.log('speaking');
     div.style.border="3px solid yellow";      
   });
 
   speechEvents.on('stopped_speaking', function() {
-    console.log('stopped_speaking');
+    // console.log('stopped_speaking');
     div.style.border="3px solid black";
   });
+}
+
+//////////////////////setVideo()///////////////////
+
+function setVideo(stream, clientID){
+  var video = document.createElement("video");
+  video.autoplay = true;
+  video.id = 'video';
+  video.controls = true;
+  video.class = "videoInsert";
+  video.setAttribute('playsInline', '');
+  video.style = 'width: 100%;height: 100%;';
+  video.srcObject = stream;
+
+  var div = document.createElement("div");
+  div.id = clientID;
+  div.className = 'videoDiv';
+  div.appendChild(video);
+
+  activeVoice(stream, div);
+
+  document.getElementById("webcamDiv").appendChild(div);
 }
 
 //////////////////getUserMedia()///////////////////
@@ -479,25 +315,22 @@ function getMediaStream() {
     window.stream = stream; // make variable available to browser console
 
     //create a video element and add it to the DOM
-    localScreen[i] = document.createElement("video");
-    //document.getElementById("videoDiv").appendChild(localScreen[i]);
-    //localScreen[i].id = 'localScreen[i]';
-    localScreen[i].autoplay = true;
-    localScreen[i].srcObject = stream; //assigning stream to the video element
-    localScreen[i].id = 'video';
-    localScreen[i].controls = true;
-    localScreen[i].muted = true;
-    localScreen[i].class = "videoInsert";
-    localScreen[i].style = 'width: 100%;height: 100%;';
-    localScreen[i].setAttribute('playsInline', ''); 
+    var video = document.createElement("video");
+    video.autoplay = true;
+    video.srcObject = stream; //assigning stream to the video element
+    video.id = 'video';
+    video.controls = true;
+    video.muted = true;
+    video.class = "videoInsert";
+    video.style = 'width: 100%;height: 100%;';
+    video.setAttribute('playsInline', ''); 
 
     var div = document.createElement("div");
-    div.id = i;
+    div.id = 'local';
     div.className = 'videoDiv';
-    div.appendChild(localScreen[i]);
+    div.appendChild(video);
 
     document.getElementById("webcamDiv").appendChild(div);
-    i = i + 1;
     localStream = stream;
 
     sendMessage('got user media');
@@ -562,7 +395,8 @@ msgChannel.watch(function(data) {
 function maybeStart() {
   console.log('>>>>>>> maybeStart() ', localStream, isNew);
   if (typeof localStream !== 'undefined' && isNew) {
-    offer();
+    var screenFlag = false;
+    offer(localStream, screenFlag);
     for (var i = 0; i < clientsData.length; i++) {
       if (clientsData[i] === client.id) {
         //console.log('own id');
@@ -577,9 +411,9 @@ window.onbeforeunload = function() {
   sendMessage('bye');
 };
 
-///////////////////////////////offer()/////////////////////////////////////////
+///////////////////////////////offer()////////////////////////////////////
 
-function offer() {
+function offer(stream, screenFlag) {
   console.log('clientsData.length ', clientsData.length);
   for (var i = 0; i < clientsData.length; i++) {
     if (clientsData[i] === client.id) {
@@ -587,69 +421,82 @@ function offer() {
     } else {
       //clientsList[i]
       console.log('>>>>>> creating peer connection for ', clientsData[i], ' by ', client.id);
-      pc[i] = createOfferPeerConnection(clientsData[i]);
+      pc[i] = createOfferPeerConnection(clientsData[i], stream, screenFlag);
     }
   }
 }
 
 ////////////////createOfferPeerConnection(()////////////////////////////////////
 
-function createOfferPeerConnection(clientID) {
+function createOfferPeerConnection(clientID, stream, screenFlag) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleOfferIceCandidate;
-    pc.oniceconnectionstatechange = handleOfferIceCandidateStateChange;
-    pc.ontrack = handleOfferRemoteStreamAdded;
-    pc.onremovestream = handleOfferRemoteStreamRemoved;
+    
+    pc.onicecandidate = function (event) {
+      console.log('offer - onicecandidate event is triggered ', event);
+      if (event.candidate) {
+        var c = parseCandidate(event.candidate.candidate);
+        console.table(c);
+        client.emit('iceOffer', {
+          type: 'candidate',
+          label: event.candidate.sdpMLineIndex,
+          id: event.candidate.sdpMid,
+          candidate: event.candidate.candidate,
+          from: client.id,
+          to: clientID
+        });
+      } else {
+        console.info('%c End of candidates Answer.', 'background: green; color: white; display: block;');
+      }
+    };
+
+    //pc.oniceconnectionstatechange = handleOfferIceCandidateStateChange;
+
+    pc.ontrack = function (event) {
+      events.push(event);
+  
+      if (event.track.kind === "video") {
+        console.log('(Offer) Remote stream added.');  
+
+        remoteStream = event.streams[0];
+        if(!screenFlag) {
+          setVideo(event.streams[0], clientID);      
+        }
+        console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
+      }
+    };
+
     console.log('Created offer RTCPeerConnnection ', pc, ' for ', clientID);
   } catch (e) {
-    console.log('Failed to create offer PeerConnection for ', clientID, 'exception: ' + e.message);
+    console.error('Failed to create offer PeerConnection for ', clientID, 'exception: ' + e.message);
     alert('Cannot create offer RTCPeerConnection object for ', clientID);
     return;
   }
 
-  localStream.getTracks().forEach(
+  stream.getTracks().forEach(
     function(track) {
       pc.addTrack(
         track,
-        localStream
+        stream
       );
     }
   );
 
-  pc.createOffer(function(offer) {
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+  pc.createOffer().then(function(offerdata){   
     console.log('pc[ ] ', pc, ' for ', clientID);
-    pc.setLocalDescription(offer);
-    console.log('setLocalDescription for offer ', offer, ' id ', clientID);
-    console.table(offer);
+    pc.setLocalDescription(offerdata);
+    console.log('setLocalDescription for offer ', offerdata, ' id ', clientID);
+    console.table(offerdata);
     client.emit('offer', {
-      data: offer,
+      data: offerdata,
+      screenFlag: screenFlag,
       from: client.id,
       to: clientID
     });
-    //sendMessage(sessionDescription);
-  }, function(err) {
-    console.log('error', err);
-  });
-
-  function handleOfferIceCandidate(event) {
-    console.log('handleOfferIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      var c = parseCandidate(event.candidate.candidate);
-      client.emit('iceOffer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: clientID
-      });
-    } else {
-      console.log('End of candidates for offer.');
-    }
-  }
+  })
+  .catch(function(reason){
+    console.error('error ', reason);
+  });  
 
   function handleOfferIceCandidateStateChange(event) {
     if (pc.iceConnectionState === "failed") {
@@ -662,58 +509,76 @@ function createOfferPeerConnection(clientID) {
       // Handle the failure
     }  
   };
-
-  function handleOfferRemoteStreamAdded(event) {
-
-    events.push(event);
-
-    if (event.track.kind === "video") {
-      console.log('(Offer) Remote stream added.');
-
-      remoteStream = event.streams[0];
-
-      localScreen[i] = document.createElement("video");
-      localScreen[i].autoplay = true;
-      localScreen[i].id = 'video';
-      localScreen[i].controls = true;
-      localScreen[i].class = "videoInsert";
-      localScreen[i].setAttribute('playsInline', '');
-      localScreen[i].style = 'width: 100%;height: 100%;';
-      localScreen[i].srcObject = event.streams[0];
-
-      var div = document.createElement("div");
-      div.id = clientID;
-      div.className = 'videoDiv';
-      div.appendChild(localScreen[i]);
-
-      activeVoice(event.streams[0], div);
-
-      document.getElementById("webcamDiv").appendChild(div);
-      i = i + 1;
-
-      console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
-    }
-
-  }
-
-  function handleOfferRemoteStreamRemoved(event) {
-    console.log('(Offer) Remote stream removed. Event: ', event);
-  }
-
   return pc;
 }
+
+/////////////////////offerChannel//////////////////////////////////////////////
+
+var offerChannel = client.subscribe('offer');
+
+offerChannel.on('subscribeFail', function(err) {
+console.error('Failed to subscribe to the offer channel due to error: ' + err);
+});
+
+offerChannel.watch(function(data) {
+
+if (data.to === client.id) {
+  console.log('offer if case ', data.data.type);
+  pc1 = createAnswerPeerConnection(data);
+
+} else {
+  console.log('offer else case ', data);
+}
+});
 
 ////////////////createAnswerPeerConnection(()//////////////////////////////////
 
 function createAnswerPeerConnection(data) {
   try {
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    pc.onicecandidate = handleAnswerIceCandidate;
-    pc.ontrack = handleAnswerRemoteStreamAdded;
-    pc.onremovestream = handleAnswerRemoteStreamRemoved;
+    console.log('answer data is ', data);
+    var pc = new RTCPeerConnection(pc_config, pc_constraints);   
+
+    pc.onicecandidate = function (event) {
+      console.log('answer - onicecandidate event is triggered ', event);
+      if (event.candidate) {
+        var c = parseCandidate(event.candidate.candidate);
+        console.table(c);
+        client.emit('iceAnswer', {
+          type: 'candidate',
+          label: event.candidate.sdpMLineIndex,
+          id: event.candidate.sdpMid,
+          candidate: event.candidate.candidate,
+          from: client.id,
+          to: data.from
+        });
+      } else {
+        console.info('%c End of candidates Answer.', 'background: green; color: white; display: block;');
+      }
+    };
+
+    pc.ontrack = function (event) {
+
+      events.push(event);
+  
+      if (event.track.kind === "video") {
+        console.log('(Answer)Remote stream added.');
+        remoteStream = event.streams[0];
+        if (data.screenFlag) {
+          var v = document.getElementById("screenshareVideo");
+          v.autoplay = true;
+          v.srcObject = event.streams[0]; //assigning stream to the video element
+          v.controls = true;
+          v.setAttribute('playsInline', '');
+          console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+        } else {
+          setVideo(event.streams[0], data.from);
+          console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+        }        
+      }
+    };    
     console.log('Created Answer RTCPeerConnnection ', pc, ' for ', data.from);
   } catch (e) {
-    console.log('Failed to create Answer PeerConnection,for ', data.from, ' exception: ' + e.message);
+    console.error('Failed to create Answer PeerConnection,for ', data.from, ' exception: ' + e.message);
     alert('Cannot create Answer RTCPeerConnection object.');
     return;
   }
@@ -728,100 +593,30 @@ function createAnswerPeerConnection(data) {
   );
 
   pc.setRemoteDescription(new RTCSessionDescription(data.data));
-  pc.createAnswer(function(answer) {
+
+  pc.createAnswer().then(function(answerdata){
     // Set Opus as the preferred codec in SDP if Opus is present.
     //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
     console.log('pc[ ] ', pc, ' for ', data.from);
-    pc.setLocalDescription(answer);
-    console.log('setLocalDescription for answer ', answer, ' id ', data.from);
+    pc.setLocalDescription(answerdata);
+    console.log('setLocalDescription for answer ', answerdata, ' id ', data.from);
     client.emit('answer', {
-      data: answer,
+      data: answerdata,
       from: data.to,
       to: data.from
     });
-  }, function(err) {
-    console.log('error', err);
+  }).catch(function(reason) {
+    console.error('error ', reason);
   });
-
-  function handleAnswerIceCandidate(event) {
-    console.log('handleAnswerIceCandidate event is triggered ', event);
-    if (event.candidate) {
-      client.emit('iceAnswer', {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate,
-        from: client.id,
-        to: data.from
-      });
-    } else {
-      console.log('End of candidates Answer.');
-    }
-  }
-
-  function handleAnswerRemoteStreamAdded(event) {
-
-    events.push(event);
-
-    if (event.track.kind === "video") {
-      console.log('(Answer)Remote stream added.');
-      remoteStream = event.streams[0];
-
-      //create a video element and add it to the DOM
-      localScreen[i] = document.createElement("video");
-      localScreen[i].autoplay = true;
-      localScreen[i].id = 'video';
-      localScreen[i].controls = true;
-      localScreen[i].class = "videoInsert";
-      localScreen[i].setAttribute('playsInline', '');
-      localScreen[i].style = 'width: 100%;height: 100%;';
-      localScreen[i].srcObject = event.streams[0];
-
-      var div = document.createElement("div");
-      div.id = data.from;
-      div.className = 'videoDiv';
-      div.appendChild(localScreen[i]);
-
-      activeVoice(event.streams[0], div);
-
-      document.getElementById("webcamDiv").appendChild(div);
-      i = i + 1;
-      console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
-    }
-  }
-
-  function handleAnswerRemoteStreamRemoved(event) {
-    console.log('(Answer)Remote stream removed. Event: ', event);
-  }
-
   return pc;
 }
-
-/////////////////////offerChannel//////////////////////////////////////////////
-
-var offerChannel = client.subscribe('offer');
-
-offerChannel.on('subscribeFail', function(err) {
-console.log('Failed to subscribe to the offer channel due to error: ' + err);
-});
-
-offerChannel.watch(function(data) {
-
-if (data.to === client.id) {
-  console.log('offer if case ', data.data.type);
-  pc1 = createAnswerPeerConnection(data);
-
-} else {
-  console.log('offer else case ', data);
-}
-});
 
 ////////////////////////answerChannel/////////////////////////////////////
 
 var answerChannel = client.subscribe('answer');
 
 answerChannel.on('subscribeFail', function(err) {
-console.log('Failed to subscribe to the Answer channel due to error: ' + err);
+console.error('Failed to subscribe to the Answer channel due to error: ' + err);
 });
 
 answerChannel.watch(function(data) {
@@ -844,7 +639,7 @@ if (data.to === client.id) {
 var iceOfferChannel = client.subscribe('iceOffer');
 
 iceOfferChannel.on('subscribeFail', function(err) {
-console.log('Failed to subscribe to the iceOffer channel due to error: ' + err);
+console.error('Failed to subscribe to the iceOffer channel due to error: ' + err);
 });
 
 iceOfferChannel.watch(function(data) {
@@ -866,35 +661,33 @@ if (data.to === client.id) {
 }
 });
 
-///////////////////////////iceAnswerChannel////////////////////////////////////////
+///////////////////////////iceAnswerChannel////////////////////////////////
 
 var iceAnswerChannel = client.subscribe('iceAnswer');
 
 iceAnswerChannel.on('subscribeFail', function(err) {
-console.log('Failed to subscribe to the iceAnswer channel due to error: ' + err);
+  console.error('Failed to subscribe to the iceAnswer channel due to error: ' + err);
 });
 
 iceAnswerChannel.watch(function(data) {
-
-if (data.to === client.id) {
-  for (var i = 0; i < clientsData.length; i++) {
-    if (clientsData[i] == data.from) {
-      console.log('iceAnswer if case ', data);
-      //pc1 = createAnswerPeerConnection(data);
-      var candidate = new RTCIceCandidate({
-        sdpMLineIndex: data.label,
-        candidate: data.candidate
-      });
-      pc[i].addIceCandidate(candidate).then(_=>{
-        // Do stuff when the candidate is successfully passed to the ICE agent
-      }).catch(e=>{
-        console.log("Error: Failure during iceAnswer addIceCandidate()");
-      });
+  if (data.to === client.id) {
+    for (var i = 0; i < clientsData.length; i++) {
+      if (clientsData[i] == data.from) {
+        console.log('iceAnswer if case ', data);
+        //pc1 = createAnswerPeerConnection(data);
+        var candidate = new RTCIceCandidate({
+          sdpMLineIndex: data.label,
+          candidate: data.candidate
+        });
+        pc[i].addIceCandidate(candidate).then(_=>{
+          // Do stuff when the candidate is successfully passed to the ICE agent
+        }).catch(e=>{
+          console.log("Error: Failure during iceAnswer addIceCandidate()");
+        });
+      }
     }
+  } else {
+    console.log('iceAnswer else case ', data);
   }
-} else {
-  console.log('iceAnswer else case ', data);
-}
 });
-
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
