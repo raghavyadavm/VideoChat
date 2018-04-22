@@ -20,11 +20,11 @@
     "sc-errors": "^1.4.0",
     "sc-framework-health-check": "^2.0.0",
     "sc-hot-reboot": "^1.0.0",
-    "scc-broker-client": "^2.1.2",
+    "scc-broker-client": "^5.0.1",
     "serve-static": "1.11.2",
     "simple-node-logger": "^0.93.37",
-    "socketcluster": "^10.1.1",
-    "socketcluster-client": "^10.1.2"
+    "socketcluster": "^11.3.6",
+    "socketcluster-client": "^11.1.0"
   },
   "keywords": [
     "websocket",
