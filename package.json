@@ -1,7 +1,7 @@
 {
   "name": "videochat",
   "description": "WebRTC based video chat + screenshare + chat",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "contributors": [
     {
       "name": "Raghavender Mylagary",
@@ -13,6 +13,7 @@
     "url": "git://github.com/raghavyadavm/VideoChat.git"
   },
   "dependencies": {
+    "colors": "^1.2.1",
     "connect": "3.0.1",
     "express": "4.14.0",
     "minimist": "1.1.0",
