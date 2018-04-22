@@ -37,22 +37,15 @@ class Worker extends SCWorker {
 
     httpServer.on("request", app);
 
-    /*
-      In here we handle our incoming realtime connections and listen for events.
-    */
     scServer.on("connection", function(server) {
       log.info("User connected");
       log.info("clients connected are", Object.keys(scServer.clients));
       log.info("id: ", server.id);
-      // clientsList.push(server.id);
-      // log.info("list of clients", clientsList);
 
       scServer.exchange.publish(
         "clientsConnected",
         Object.keys(scServer.clients)
       );
-
-      // log.info('clients count: ', scServer.clientsCount);
 
       server.on("msg", function(message) {
         log.info("client said: ", message);
@@ -82,10 +75,8 @@ class Worker extends SCWorker {
             room: room
           };
           scServer.exchange.publish("join", data); //io.sockets.in(room).emit('join', room);
-          //scServer.exchange.publish('isInitiator', data); //io.sockets.in(room).emit('join', room);
           server.emit("askClientToSubscribe", data.room); //socket.join(room);
           server.emit("joined", Object.keys(scServer.clients));
-          //server.emit('full', room);
         }
       });
 
@@ -131,16 +122,12 @@ class Worker extends SCWorker {
 
       server.on("disconnect", function() {
         log.info("User disconnected ", server.id);
-        // var index = clientsList.indexOf(server.id);
-        // if (index !== -1) clientsList.splice(index, 1);
-        // console.log('new clients list', clientsList);
         log.info("disconnection ", Object.keys(scServer.clients));
         scServer.exchange.publish(
           "clientsDisconnect",
           Object.keys(scServer.clients)
         );
         scServer.exchange.publish("removeVideo", server.id);
-        // scServer.exchange.publish('yell', server.id+' got disconnected');
       });
 
       server.on("screenOffer", function(data) {
