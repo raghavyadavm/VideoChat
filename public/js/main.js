@@ -13,23 +13,22 @@ var screenFlag = false;
 
 //STUN server configuration
 var pc_config = {
-  'iceServers': [   
+  iceServers: [
     {
-      'urls': 'stun:eskns.com:19302',
-    },
-    {
-      'urls':'turn:eskns.com:19302?transport=udp',
-      'username': 'raghav',
-      'credential': 'TOTAL-quota-parameter'
+      urls: 'turn:eskns.com:19302?transport=udp',
+      username: 'raghav',
+      credential: 'TOTAL-quota-parameter'
     }
-  ]//,
-  //"iceTransportPolicy":"relay" 
+  ] //,
+  //"iceTransportPolicy":"relay"
 };
 
 var pc_constraints = {
-  'optional': [{
-    'DtlsSrtpKeyAgreement': true
-  }]
+  optional: [
+    {
+      DtlsSrtpKeyAgreement: true
+    }
+  ]
 };
 
 // Set up audio and video regardless of what devices are present.
@@ -43,16 +42,24 @@ var sdpConstraints = {
 function parseCandidate(text) {
   var candidateStr = 'candidate:';
   var pos = text.indexOf(candidateStr) + candidateStr.length;
-  var [foundation, component, protocol, priority, address, port, , type] =
-    text.substr(pos).split(' ');
+  var [
+    foundation,
+    component,
+    protocol,
+    priority,
+    address,
+    port,
+    ,
+    type
+  ] = text.substr(pos).split(' ');
   return {
-    'component': component,
-    'type': type,
-    'foundation': foundation,
-    'protocol': protocol,
-    'address': address,
-    'port': port,
-    'priority': priority
+    component: component,
+    type: type,
+    foundation: foundation,
+    protocol: protocol,
+    address: address,
+    port: port,
+    priority: priority
   };
 }
 
@@ -66,21 +73,23 @@ if (navigator.mediaDevices === undefined) {
 // Here, we will just add the getUserMedia property if it's missing.
 if (navigator.mediaDevices.getUserMedia === undefined) {
   navigator.mediaDevices.getUserMedia = function(constraints) {
-
     // First get ahold of the legacy getUserMedia, if present
-    var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    var getUserMedia =
+      navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
     // Some browsers just don't implement it - return a rejected promise with an error
     // to keep a consistent interface
     if (!getUserMedia) {
-      return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+      return Promise.reject(
+        new Error('getUserMedia is not implemented in this browser')
+      );
     }
 
     // Otherwise, wrap the call to the old navigator.getUserMedia with a Promise
     return new Promise(function(resolve, reject) {
       getUserMedia.call(navigator, constraints, resolve, reject);
     });
-  }
+  };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -102,13 +111,12 @@ console.log('screen share clients ', clientsData);
 let screen_constraints;
 
 document.getElementById('capture-screen').onclick = function() {
-
   screen_constraints = {
     video: {
       mozMediaSource: 'window',
       mediaSource: 'window'
     }
-  }
+  };
 
   function handleScreenSuccess(stream) {
     document.getElementById('screenshareVideo').srcObject = stream;
@@ -126,19 +134,24 @@ document.getElementById('capture-screen').onclick = function() {
     console.error('getScreenId error', error);
     alert('Failed to capture your screen.');
   }
-  navigator.mediaDevices.getUserMedia(screen_constraints)
-    .then(handleScreenSuccess).catch(handleScreenError);
+  navigator.mediaDevices
+    .getUserMedia(screen_constraints)
+    .then(handleScreenSuccess)
+    .catch(handleScreenError);
 };
 ////////////////////chat functions////////////////////////////////////
 
 document.getElementById('Submit').onclick = function() {
-  if (document.getElementById("message").value != '') {
-    client.emit('chat', (name + " : " + document.getElementById("message").value));
+  if (document.getElementById('message').value != '') {
+    client.emit(
+      'chat',
+      name + ' : ' + document.getElementById('message').value
+    );
   }
 
-  document.getElementById("message").value = ''
+  document.getElementById('message').value = '';
   return false;
-}
+};
 
 var chatChannel = client.subscribe('yell');
 
@@ -147,18 +160,18 @@ chatChannel.on('subscribeFail', function(err) {
 });
 
 chatChannel.watch(function(data) {
-  let newData = anchorme(data,{
-    attributes:[
+  let newData = anchorme(data, {
+    attributes: [
       {
-        name:"target",
-        value:"_blank"
+        name: 'target',
+        value: '_blank'
       }
     ],
     truncate: 20
   });
-  var ul = document.getElementById("messages-list");
-  var li = document.createElement("li");
-  li.innerHTML= newData;
+  var ul = document.getElementById('messages-list');
+  var li = document.createElement('li');
+  li.innerHTML = newData;
   ul.appendChild(li);
 });
 
@@ -173,7 +186,9 @@ if (room !== '') {
 
 var clientsDisconnectChannel = client.subscribe('clientsDisconnect');
 clientsDisconnectChannel.on('subscribeFail', function(err) {
-  console.error('Failed to subscribe to the clientsDisconnect channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the clientsDisconnect channel due to error: ' + err
+  );
 });
 clientsDisconnectChannel.watch(function(data) {
   console.log('clientsDisconnectChannel data is ');
@@ -183,7 +198,9 @@ clientsDisconnectChannel.watch(function(data) {
 
 var clientsConnectedChannel = client.subscribe('clientsConnected');
 clientsConnectedChannel.on('subscribeFail', function(err) {
-  console.error('Failed to subscribe to the clientsConnected channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the clientsConnected channel due to error: ' + err
+  );
 });
 clientsConnectedChannel.watch(function(data) {
   console.log('clientsConnectedChannel data is ');
@@ -193,7 +210,9 @@ clientsConnectedChannel.watch(function(data) {
 
 var removeVideoChannel = client.subscribe('removeVideo');
 removeVideoChannel.on('subscribeFail', function(err) {
-  console.error('Failed to subscribe to the removeVideo channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the removeVideo channel due to error: ' + err
+  );
 });
 removeVideoChannel.watch(function(data) {
   console.log('removeVideoChannel data is ', data);
@@ -231,7 +250,6 @@ joinChannel.on('subscribeFail', function(err) {
 joinChannel.watch(function(data) {
   var roomid = data.room;
   if (data.id === client.id) {
-
     // console.log('id s are equal');
   } else {
     console.log('another peer made a request to join room ' + roomid);
@@ -251,7 +269,6 @@ client.on('joined', function(clients) {
     if (clients[i] == client.id) {
       console.log(client.id, ' hello');
     } else {
-
     }
   }
   isChannelReady = true;
@@ -263,46 +280,45 @@ function activeVoice(stream, div) {
   var speechEvents = hark(stream, {});
   speechEvents.on('speaking', function() {
     // console.log('speaking');
-    div.style.border="3px solid yellow";      
+    div.style.border = '3px solid yellow';
   });
 
   speechEvents.on('stopped_speaking', function() {
     // console.log('stopped_speaking');
-    div.style.border="3px solid black";
+    div.style.border = '3px solid black';
   });
 }
 
 //////////////////////setVideo()///////////////////
 
-function setVideo(stream, clientID){
-  var video = document.createElement("video");
+function setVideo(stream, clientID) {
+  var video = document.createElement('video');
   video.autoplay = true;
   video.id = 'video';
   video.controls = true;
-  video.class = "videoInsert";
+  video.class = 'videoInsert';
   video.setAttribute('playsInline', '');
   video.style = 'width: 100%;height: 100%;';
   video.srcObject = stream;
 
-  var div = document.createElement("div");
+  var div = document.createElement('div');
   div.id = clientID;
   div.className = 'videoDiv';
   div.appendChild(video);
 
   activeVoice(stream, div);
 
-  document.getElementById("webcamDiv").appendChild(div);
+  document.getElementById('webcamDiv').appendChild(div);
 }
 
 //////////////////getUserMedia()///////////////////
 
 function getMediaStream() {
-
   console.log('media stream');
-  var constraints = window.constraints = {
+  var constraints = (window.constraints = {
     audio: true,
-    video: true
-  };
+    video: { facingMode: 'user', mirrored: true }
+  });
 
   function handleSuccess(stream) {
     console.log('Adding local stream.');
@@ -315,22 +331,23 @@ function getMediaStream() {
     window.stream = stream; // make variable available to browser console
 
     //create a video element and add it to the DOM
-    var video = document.createElement("video");
+    var video = document.createElement('video');
     video.autoplay = true;
     video.srcObject = stream; //assigning stream to the video element
     video.id = 'video';
     video.controls = true;
     video.muted = true;
-    video.class = "videoInsert";
-    video.style = 'width: 100%;height: 100%;';
-    video.setAttribute('playsInline', ''); 
+    video.class = 'videoInsert';
+    video.style =
+      'width: 100%;height: 100%;transform: scale(-1, 1);-webkit-transform: scale(-1, 1);';
+    video.setAttribute('playsInline', '');
 
-    var div = document.createElement("div");
+    var div = document.createElement('div');
     div.id = 'local';
     div.className = 'videoDiv';
     div.appendChild(video);
 
-    document.getElementById("webcamDiv").appendChild(div);
+    document.getElementById('webcamDiv').appendChild(div);
     localStream = stream;
 
     sendMessage('got user media');
@@ -338,12 +355,19 @@ function getMediaStream() {
 
   function handleError(error) {
     if (error.name === 'ConstraintNotSatisfiedError') {
-      errorMsg('The resolution ' + constraints.video.width.exact + 'x' +
-        constraints.video.width.exact + ' px is not supported by your device.');
+      errorMsg(
+        'The resolution ' +
+          constraints.video.width.exact +
+          'x' +
+          constraints.video.width.exact +
+          ' px is not supported by your device.'
+      );
     } else if (error.name === 'PermissionDeniedError') {
-      errorMsg('Permissions have not been granted to use your camera and ' +
-        'microphone, you need to allow the page access to your devices in ' +
-        'order for the demo to work.');
+      errorMsg(
+        'Permissions have not been granted to use your camera and ' +
+          'microphone, you need to allow the page access to your devices in ' +
+          'order for the demo to work.'
+      );
     }
     errorMsg('getUserMedia error: ' + error.name, error);
   }
@@ -355,8 +379,10 @@ function getMediaStream() {
     }
   }
 
-  navigator.mediaDevices.getUserMedia(constraints).
-  then(handleSuccess).catch(handleError);
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(handleSuccess)
+    .catch(handleError);
 
   console.log('Getting user media with constraints', constraints);
 }
@@ -364,8 +390,7 @@ function getMediaStream() {
 //////////////////sendMessage()///////////////////
 
 function sendMessage(message) {
-  if ((message.type === 'candidate')) {
-
+  if (message.type === 'candidate') {
   } else {
     console.log('Client sending message: ', message);
   }
@@ -386,7 +411,6 @@ msgChannel.watch(function(data) {
       maybeStart();
     }
   } else {
-
   }
 });
 
@@ -420,7 +444,12 @@ function offer(stream, screenFlag) {
       //console.log('own id');
     } else {
       //clientsList[i]
-      console.log('>>>>>> creating peer connection for ', clientsData[i], ' by ', client.id);
+      console.log(
+        '>>>>>> creating peer connection for ',
+        clientsData[i],
+        ' by ',
+        client.id
+      );
       pc[i] = createOfferPeerConnection(clientsData[i], stream, screenFlag);
     }
   }
@@ -431,8 +460,8 @@ function offer(stream, screenFlag) {
 function createOfferPeerConnection(clientID, stream, screenFlag) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
-    
-    pc.onicecandidate = function (event) {
+
+    pc.onicecandidate = function(event) {
       console.log('offer - onicecandidate event is triggered ', event);
       if (event.candidate) {
         var c = parseCandidate(event.candidate.candidate);
@@ -446,69 +475,79 @@ function createOfferPeerConnection(clientID, stream, screenFlag) {
           to: clientID
         });
       } else {
-        console.info('%c End of candidates Answer.', 'background: green; color: white; display: block;');
+        console.info(
+          '%c End of candidates Answer.',
+          'background: green; color: white; display: block;'
+        );
       }
     };
 
     //pc.oniceconnectionstatechange = handleOfferIceCandidateStateChange;
 
-    pc.ontrack = function (event) {
+    pc.ontrack = function(event) {
       events.push(event);
-  
-      if (event.track.kind === "video") {
-        console.log('(Offer) Remote stream added.');  
+
+      if (event.track.kind === 'video') {
+        console.log('(Offer) Remote stream added.');
 
         remoteStream = event.streams[0];
-        if(!screenFlag) {
-          setVideo(event.streams[0], clientID);      
+        if (!screenFlag) {
+          setVideo(event.streams[0], clientID);
         }
-        console.log('(Offer) remote stream:  of ' + client.id + ' is: ', remoteStream);
+        console.log(
+          '(Offer) remote stream:  of ' + client.id + ' is: ',
+          remoteStream
+        );
       }
     };
 
     console.log('Created offer RTCPeerConnnection ', pc, ' for ', clientID);
   } catch (e) {
-    console.error('Failed to create offer PeerConnection for ', clientID, 'exception: ' + e.message);
+    console.error(
+      'Failed to create offer PeerConnection for ',
+      clientID,
+      'exception: ' + e.message
+    );
     alert('Cannot create offer RTCPeerConnection object for ', clientID);
     return;
   }
 
-  stream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        stream
-      );
-    }
-  );
+  stream.getTracks().forEach(function(track) {
+    pc.addTrack(track, stream);
+  });
 
-  pc.createOffer().then(function(offerdata){   
-    console.log('pc[ ] ', pc, ' for ', clientID);
-    pc.setLocalDescription(offerdata);
-    console.log('setLocalDescription for offer ', offerdata, ' id ', clientID);
-    console.table(offerdata);
-    client.emit('offer', {
-      data: offerdata,
-      screenFlag: screenFlag,
-      from: client.id,
-      to: clientID
+  pc
+    .createOffer()
+    .then(function(offerdata) {
+      console.log('pc[ ] ', pc, ' for ', clientID);
+      pc.setLocalDescription(offerdata);
+      console.log(
+        'setLocalDescription for offer ',
+        offerdata,
+        ' id ',
+        clientID
+      );
+      console.table(offerdata);
+      client.emit('offer', {
+        data: offerdata,
+        screenFlag: screenFlag,
+        from: client.id,
+        to: clientID
+      });
+    })
+    .catch(function(reason) {
+      console.error('error ', reason);
     });
-  })
-  .catch(function(reason){
-    console.error('error ', reason);
-  });  
 
   function handleOfferIceCandidateStateChange(event) {
-    if (pc.iceConnectionState === "failed") {
-
-    } 
-    if(pc.iceConnectionState === "disconnected") {
-
-    } 
-    if(pc.iceConnectionState === "closed") {
+    if (pc.iceConnectionState === 'failed') {
+    }
+    if (pc.iceConnectionState === 'disconnected') {
+    }
+    if (pc.iceConnectionState === 'closed') {
       // Handle the failure
-    }  
-  };
+    }
+  }
   return pc;
 }
 
@@ -517,18 +556,18 @@ function createOfferPeerConnection(clientID, stream, screenFlag) {
 var offerChannel = client.subscribe('offer');
 
 offerChannel.on('subscribeFail', function(err) {
-console.error('Failed to subscribe to the offer channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the offer channel due to error: ' + err
+  );
 });
 
 offerChannel.watch(function(data) {
-
-if (data.to === client.id) {
-  console.log('offer if case ', data.data.type);
-  pc1 = createAnswerPeerConnection(data);
-
-} else {
-  console.log('offer else case ', data);
-}
+  if (data.to === client.id) {
+    console.log('offer if case ', data.data.type);
+    pc1 = createAnswerPeerConnection(data);
+  } else {
+    console.log('offer else case ', data);
+  }
 });
 
 ////////////////createAnswerPeerConnection(()//////////////////////////////////
@@ -536,9 +575,9 @@ if (data.to === client.id) {
 function createAnswerPeerConnection(data) {
   try {
     console.log('answer data is ', data);
-    var pc = new RTCPeerConnection(pc_config, pc_constraints);   
+    var pc = new RTCPeerConnection(pc_config, pc_constraints);
 
-    pc.onicecandidate = function (event) {
+    pc.onicecandidate = function(event) {
       console.log('answer - onicecandidate event is triggered ', event);
       if (event.candidate) {
         var c = parseCandidate(event.candidate.candidate);
@@ -552,62 +591,77 @@ function createAnswerPeerConnection(data) {
           to: data.from
         });
       } else {
-        console.info('%c End of candidates Answer.', 'background: green; color: white; display: block;');
+        console.info(
+          '%c End of candidates Answer.',
+          'background: green; color: white; display: block;'
+        );
       }
     };
 
-    pc.ontrack = function (event) {
-
+    pc.ontrack = function(event) {
       events.push(event);
-  
-      if (event.track.kind === "video") {
+
+      if (event.track.kind === 'video') {
         console.log('(Answer)Remote stream added.');
         remoteStream = event.streams[0];
         if (data.screenFlag) {
-          var v = document.getElementById("screenshareVideo");
+          var v = document.getElementById('screenshareVideo');
           v.autoplay = true;
           v.srcObject = event.streams[0]; //assigning stream to the video element
           v.controls = true;
           v.setAttribute('playsInline', '');
-          console.log('(ScreenAnswer)remote stream:  of ' + client.id + ' is: ', remoteStream);
+          console.log(
+            '(ScreenAnswer)remote stream:  of ' + client.id + ' is: ',
+            remoteStream
+          );
         } else {
           setVideo(event.streams[0], data.from);
-          console.log('(Answer)remote stream:  of ' + client.id + ' is: ', remoteStream);
-        }        
+          console.log(
+            '(Answer)remote stream:  of ' + client.id + ' is: ',
+            remoteStream
+          );
+        }
       }
-    };    
+    };
     console.log('Created Answer RTCPeerConnnection ', pc, ' for ', data.from);
   } catch (e) {
-    console.error('Failed to create Answer PeerConnection,for ', data.from, ' exception: ' + e.message);
+    console.error(
+      'Failed to create Answer PeerConnection,for ',
+      data.from,
+      ' exception: ' + e.message
+    );
     alert('Cannot create Answer RTCPeerConnection object.');
     return;
   }
 
-  localStream.getTracks().forEach(
-    function(track) {
-      pc.addTrack(
-        track,
-        localStream
-      );
-    }
-  );
+  localStream.getTracks().forEach(function(track) {
+    pc.addTrack(track, localStream);
+  });
 
   pc.setRemoteDescription(new RTCSessionDescription(data.data));
 
-  pc.createAnswer().then(function(answerdata){
-    // Set Opus as the preferred codec in SDP if Opus is present.
-    //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-    console.log('pc[ ] ', pc, ' for ', data.from);
-    pc.setLocalDescription(answerdata);
-    console.log('setLocalDescription for answer ', answerdata, ' id ', data.from);
-    client.emit('answer', {
-      data: answerdata,
-      from: data.to,
-      to: data.from
+  pc
+    .createAnswer()
+    .then(function(answerdata) {
+      // Set Opus as the preferred codec in SDP if Opus is present.
+      //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+      console.log('pc[ ] ', pc, ' for ', data.from);
+      pc.setLocalDescription(answerdata);
+      console.log(
+        'setLocalDescription for answer ',
+        answerdata,
+        ' id ',
+        data.from
+      );
+      client.emit('answer', {
+        data: answerdata,
+        from: data.to,
+        to: data.from
+      });
+    })
+    .catch(function(reason) {
+      console.error('error ', reason);
     });
-  }).catch(function(reason) {
-    console.error('error ', reason);
-  });
   return pc;
 }
 
@@ -616,22 +670,30 @@ function createAnswerPeerConnection(data) {
 var answerChannel = client.subscribe('answer');
 
 answerChannel.on('subscribeFail', function(err) {
-console.error('Failed to subscribe to the Answer channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the Answer channel due to error: ' + err
+  );
 });
 
 answerChannel.watch(function(data) {
-
-if (data.to === client.id) {
-  for (var i = 0; i < clientsData.length; i++) {
-    if (clientsData[i] == data.from) {
-      console.log('this offer belongs to pc[', i, '] ', pc[i], ' of ', clientsData[i]);
-      pc[i].setRemoteDescription(new RTCSessionDescription(data.data));
+  if (data.to === client.id) {
+    for (var i = 0; i < clientsData.length; i++) {
+      if (clientsData[i] == data.from) {
+        console.log(
+          'this offer belongs to pc[',
+          i,
+          '] ',
+          pc[i],
+          ' of ',
+          clientsData[i]
+        );
+        pc[i].setRemoteDescription(new RTCSessionDescription(data.data));
+      }
     }
+    console.log('answer if case', data);
+  } else {
+    console.log('answer else case ', data);
   }
-  console.log('answer if case', data);
-} else {
-  console.log('answer else case ', data);
-}
 });
 
 /////////////////////////////iceOfferChannel///////////////////////////////////
@@ -639,26 +701,29 @@ if (data.to === client.id) {
 var iceOfferChannel = client.subscribe('iceOffer');
 
 iceOfferChannel.on('subscribeFail', function(err) {
-console.error('Failed to subscribe to the iceOffer channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the iceOffer channel due to error: ' + err
+  );
 });
 
 iceOfferChannel.watch(function(data) {
-
-if (data.to === client.id) {
-  console.log('iceOffer if case ', data);
-  var candidate = new RTCIceCandidate({
-    sdpMLineIndex: data.label,
-    candidate: data.candidate
-  });
-  pc1.addIceCandidate(candidate).then(_=>{
-    // Do stuff when the candidate is successfully passed to the ICE agent
-  }).catch(e=>{
-    console.log("Error: Failure during iceOffer addIceCandidate()");
-  });
-
-} else {
-  console.log('iceOffer else case ', data);
-}
+  if (data.to === client.id) {
+    console.log('iceOffer if case ', data);
+    var candidate = new RTCIceCandidate({
+      sdpMLineIndex: data.label,
+      candidate: data.candidate
+    });
+    pc1
+      .addIceCandidate(candidate)
+      .then(_ => {
+        // Do stuff when the candidate is successfully passed to the ICE agent
+      })
+      .catch(e => {
+        console.log('Error: Failure during iceOffer addIceCandidate()');
+      });
+  } else {
+    console.log('iceOffer else case ', data);
+  }
 });
 
 ///////////////////////////iceAnswerChannel////////////////////////////////
@@ -666,7 +731,9 @@ if (data.to === client.id) {
 var iceAnswerChannel = client.subscribe('iceAnswer');
 
 iceAnswerChannel.on('subscribeFail', function(err) {
-  console.error('Failed to subscribe to the iceAnswer channel due to error: ' + err);
+  console.error(
+    'Failed to subscribe to the iceAnswer channel due to error: ' + err
+  );
 });
 
 iceAnswerChannel.watch(function(data) {
@@ -679,11 +746,14 @@ iceAnswerChannel.watch(function(data) {
           sdpMLineIndex: data.label,
           candidate: data.candidate
         });
-        pc[i].addIceCandidate(candidate).then(_=>{
-          // Do stuff when the candidate is successfully passed to the ICE agent
-        }).catch(e=>{
-          console.log("Error: Failure during iceAnswer addIceCandidate()");
-        });
+        pc[i]
+          .addIceCandidate(candidate)
+          .then(_ => {
+            // Do stuff when the candidate is successfully passed to the ICE agent
+          })
+          .catch(e => {
+            console.log('Error: Failure during iceAnswer addIceCandidate()');
+          });
       }
     }
   } else {
