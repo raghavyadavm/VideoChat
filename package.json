@@ -1,7 +1,7 @@
 {
   "name": "videochat",
   "description": "WebRTC based video chat + screenshare + chat",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "contributors": [
     {
       "name": "Raghavender Mylagary",
@@ -15,6 +15,7 @@
   "dependencies": {
     "colors": "^1.2.1",
     "connect": "3.0.1",
+    "dotenv": "^5.0.1",
     "express": "4.14.0",
     "minimist": "1.1.0",
     "morgan": "1.7.0",
@@ -25,18 +26,14 @@
     "serve-static": "1.11.2",
     "simple-node-logger": "^0.93.37",
     "socketcluster": "^11.3.6",
-    "socketcluster-client": "^11.1.0"
+    "socketcluster-client": "^11.1.0",
+    "ua-parser-js": "^0.7.17"
   },
-  "keywords": [
-    "websocket",
-    "server",
-    "realtime",
-    "cluster",
-    "scalable"
-  ],
+  "keywords": ["websocket", "server", "realtime", "cluster", "scalable"],
   "readmeFilename": "README.md",
   "scripts": {
     "start": "node server.js",
-    "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
+    "start:docker":
+      "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
   }
 }
