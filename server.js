@@ -1,10 +1,11 @@
-var fs = require("fs");
-var path = require("path");
-var argv = require("minimist")(process.argv.slice(2));
-var scHotReboot = require("sc-hot-reboot");
-var fsUtil = require("socketcluster/fsutil");
+require('dotenv').config();
+var fs = require('fs');
+var path = require('path');
+var argv = require('minimist')(process.argv.slice(2));
+var scHotReboot = require('sc-hot-reboot');
+var fsUtil = require('socketcluster/fsutil');
 var waitForFile = fsUtil.waitForFile;
-var SocketCluster = require("socketcluster");
+var SocketCluster = require('socketcluster');
 
 var workerControllerPath =
   argv.wc || process.env.SOCKETCLUSTER_WORKER_CONTROLLER;
@@ -12,17 +13,17 @@ var brokerControllerPath =
   argv.bc || process.env.SOCKETCLUSTER_BROKER_CONTROLLER;
 var workerClusterControllerPath =
   argv.wcc || process.env.SOCKETCLUSTER_WORKERCLUSTER_CONTROLLER;
-var environment = process.env.ENV || "dev";
+var environment = process.env.ENV || 'dev';
 
 var options = {
   workers: Number(argv.w) || Number(process.env.SOCKETCLUSTER_WORKERS) || 1,
   brokers: Number(argv.b) || Number(process.env.SOCKETCLUSTER_BROKERS) || 1,
-  port: Number(argv.p) || Number(process.env.SOCKETCLUSTER_PORT) || 8004,
+  port: Number(argv.p) || Number(process.env.SOCKETCLUSTER_PORT) || 8000,
   // You can switch to 'sc-uws' for improved performance.
-  wsEngine: process.env.SOCKETCLUSTER_WS_ENGINE || "sc-uws",
-  appName: "videochat",
-  workerController: workerControllerPath || path.join(__dirname, "worker.js"),
-  brokerController: brokerControllerPath || path.join(__dirname, "broker.js"),
+  wsEngine: process.env.SOCKETCLUSTER_WS_ENGINE || 'sc-uws',
+  appName: 'videochat',
+  workerController: workerControllerPath || path.join(__dirname, 'worker.js'),
+  brokerController: brokerControllerPath || path.join(__dirname, 'broker.js'),
   workerClusterController: workerClusterControllerPath || null,
   socketChannelLimit:
     Number(process.env.SOCKETCLUSTER_SOCKET_CHANNEL_LIMIT) || 1000,
@@ -40,15 +41,15 @@ var options = {
     Number(process.env.SCC_STATE_SERVER_ACK_TIMEOUT) || null,
   clusterStateServerReconnectRandomness:
     Number(process.env.SCC_STATE_SERVER_RECONNECT_RANDOMNESS) || null,
-  crashWorkerOnError: argv["auto-reboot"] != false,
+  crashWorkerOnError: argv['auto-reboot'] != false,
   // If using nodemon, set this to true, and make sure that environment is 'dev'.
   killMasterOnSignal: false,
   environment: environment,
-  protocol: "https",
-  path: "/socketcluster/",
+  protocol: 'https',
+  path: process.env.SOCKETCLUSTER_PATH,
   protocolOptions: {
-    key: fs.readFileSync(__dirname + "/keys/key.pem", "utf8"),
-    cert: fs.readFileSync(__dirname + "/keys/cert.pem", "utf8")
+    key: fs.readFileSync(__dirname + '/keys/key.pem', 'utf8'),
+    cert: fs.readFileSync(__dirname + '/keys/cert.pem', 'utf8')
   }
 };
 
@@ -72,10 +73,10 @@ var start = function() {
   socketCluster.on(socketCluster.EVENT_WORKER_CLUSTER_START, function(
     workerClusterInfo
   ) {
-    console.log("   >> WorkerCluster PID:", workerClusterInfo.pid);
+    console.log('   >> WorkerCluster PID:', workerClusterInfo.pid);
   });
 
-  if (socketCluster.options.environment === "dev") {
+  if (socketCluster.options.environment === 'dev') {
     // This will cause SC workers to reboot when code changes anywhere in the app directory.
     // The second options argument here is passed directly to chokidar.
     // See https://github.com/paulmillr/chokidar#api for details.
@@ -85,14 +86,14 @@ var start = function() {
     scHotReboot.attach(socketCluster, {
       cwd: __dirname,
       ignored: [
-        "public",
-        "node_modules",
-        "README.md",
-        "Dockerfile",
-        "server.js",
-        "broker.js",
+        'public',
+        'node_modules',
+        'README.md',
+        'Dockerfile',
+        'server.js',
+        'broker.js',
         /[\/\\]\./,
-        "*.log"
+        '*.log'
       ]
     });
   }
