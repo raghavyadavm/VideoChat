@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Video chat mobile Application</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Raghavender Mylagary">
+  <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script type="text/javascript" src="/js/lib/socketcluster.js"></script>
+  <script src="/js/lib/adapter.js"></script>
+  <script src="/js/lib/hark.bundle.js"></script>
+  <script src="/js/lib/anchorme.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      background-image: url(/img/background.jpg);
+    }
+
+    .wrapper {
+      display: grid;
+      grid-template-areas: "video chat";
+      grid-template-rows: 100%;
+      grid-template-columns: 70% 30%;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #webcamDiv {
+      grid-area: video;
+      display: grid;
+      /* grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */
+      grid-auto-columns: 1fr;
+      max-width: 100%;
+      max-height: auto;
+      border: 3px solid #B40707;
+
+      /* align-self: stretch; */
+    }
+
+    .videoDiv {
+      overflow: hidden;
+      border: 3px solid black;
+      border-radius: 30px;
+    }
+
+    #video {
+      object-fit: fill;
+    }
+
+    .container {
+      grid-area: chat;
+      position: relative;
+      height: 100%;
+      border: 3px solid #B40707;
+      border-radius: 20px;
+      overflow: auto;
+    }
+
+    .container ul {
+      margin: 0;
+      padding: 0;
+    }
+
+    .container ul>li {
+      list-style: none;
+      padding: 20px;
+      border-bottom: 1px solid #000;
+      border-radius: 15px;
+    }
+
+    .container ul>li:nth-child(odd) {
+      background: #da4453;
+      color: white;
+    }
+
+    .messages {
+      max-height: 95vh;
+      overflow: auto;
+      display: grid;
+    }
+
+    .actions {
+      position: absolute;
+      max-height: 10vh;
+      width: 100%;
+      bottom: 0;
+      background-color: #CCCCCC;
+      border-top: 1px solid #9E9E9E;
+    }
+
+    .actions input {
+      border: 0;
+      margin: 0;
+      font-size: 1em;
+      padding: 1.5vh 1vw;
+      width: 80%;
+      float: left;
+    }
+
+    .actions button {
+      border: 0;
+      margin: 0;
+      max-width: 20%;
+      text-align: center;
+      font-size: 1em;
+      padding: 1.5vh 1vw;
+      float: left;
+      background-color: #2ecc71;
+      color: #FFFFFF;
+    }
+
+    .videoInsert {
+      position: relative;
+      overflow: auto;
+      max-width: inherit;
+      max-height: inherit;
+      object-fit: cover;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div hidden class="head">
+      <button class="btn" id="capture-screen">
+        <i class="fa fa-desktop" aria-hidden="true"> ScreenShare</i>
+      </button>
+    </div>
+    <div id="webcamDiv">
+    </div>
+    <div class="container">
+      <div class="messages">
+        <ul id="messages-list"></ul>
+      </div>
+      <div class="actions">
+        <form id="form">
+          <input id="message" autocomplete="off" placeholder="Type a message...">
+          <button id="Submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="/js/main.js"></script>
+</body>
+
+</html>
