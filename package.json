@@ -29,11 +29,16 @@
     "socketcluster-client": "^11.1.0",
     "ua-parser-js": "^0.7.17"
   },
-  "keywords": ["websocket", "server", "realtime", "cluster", "scalable"],
+  "keywords": [
+    "websocket",
+    "server",
+    "realtime",
+    "cluster",
+    "scalable"
+  ],
   "readmeFilename": "README.md",
   "scripts": {
     "start": "node server.js",
-    "start:docker":
-      "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
+    "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
   }
 }
