@@ -1,4 +1,4 @@
-*{
+* {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
@@ -15,16 +15,12 @@ a {
 
 .wrapper {
   display: grid;
-  grid-template-areas:
-  "header chat"
-  "screen chat"
-  "video  chat";
+  grid-template-areas: "header chat" "screen chat" "video  chat";
   grid-template-rows: 5% 65% 30%;
   grid-template-columns: 80% 20%;
   width: 100vw;
   height: 100vh;
 }
-
 
 .head {
   grid-area: header;
@@ -43,6 +39,7 @@ a {
 }
 
 /* Darker background on mouse-over */
+
 .btn:hover {
   background-color: darkgreen;
 }
@@ -60,7 +57,7 @@ a {
 #screenshareVideo {
   grid-area: screen;
   width: 100% !important;
-  height: 100% !important; 
+  height: 100% !important;
   margin: 0 auto;
   display: block;
   overflow: auto;
@@ -69,10 +66,10 @@ a {
 #webcamDiv {
   grid-area: video;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   grid-auto-columns: 1fr;
   max-width: 100%;
-  max-height: auto;  
+  max-height: auto;
   /* align-self: stretch; */
 }
 
@@ -90,25 +87,30 @@ a {
   border-radius: 20px;
   overflow: auto;
 }
+
 .container ul {
   margin: 0;
   padding: 0;
 }
+
 .container ul>li {
   list-style: none;
   padding: 20px;
   border-bottom: 1px solid #000;
   border-radius: 15px;
 }
+
 .container ul>li:nth-child(odd) {
   background: #da4453;
   color: white;
 }
+
 .messages {
   max-height: 95vh;
   overflow: auto;
   display: grid;
 }
+
 .actions {
   position: absolute;
   max-height: 10vh;
@@ -117,6 +119,7 @@ a {
   background-color: #CCCCCC;
   border-top: 1px solid #9E9E9E;
 }
+
 .actions input {
   border: 0;
   margin: 0;
@@ -143,15 +146,41 @@ a {
   overflow: auto;
   max-width: inherit;
   max-height: inherit;
-  /* position: absolute;
-  right: 0;
-  bottom: 0;
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
-  z-index: -100;
-  background-size: cover; */
   object-fit: cover;
-  /* overflow: hidden; */
+}
+
+/* ----------- iPhone 6, 6S, 7 and 8 ----------- */
+
+/* Portrait */
+
+@media only screen and (min-device-width: 375px) and (max-device-width: 667px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
+  .wrapper {
+    display: grid;
+    grid-template-areas: "video  chat";
+    grid-template-rows: 100%;
+    grid-template-columns: 80% 20%;
+    width: 100vw;
+    height: 100vh;
+  }
+  #video {
+    object-fit: cover;
+  }
+}
+
+/* ----------- Galaxy S6 ----------- */
+
+/* Portrait */
+
+@media screen and (device-width: 360px) and (device-height: 640px) and (-webkit-device-pixel-ratio: 4) and (orientation: portrait) {
+  .wrapper {
+    display: grid;
+    grid-template-areas: "video  chat";
+    grid-template-rows: 100%;
+    grid-template-columns: 80% 20%;
+    width: 100vw;
+    height: 100vh;
+  }
+  #video {
+    object-fit: cover;
+  }
 }
