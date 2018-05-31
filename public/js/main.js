@@ -27,6 +27,7 @@ var pc_config = {
   //"iceTransportPolicy":"relay"
 };
 
+//Enable DTLS for peerconnection
 var pc_constraints = {
   optional: [
     {
@@ -389,7 +390,9 @@ function maybeStart() {
   }
 }
 
-// window.onbeforeunload = function () {   sendMessage('bye'); };
+window.onbeforeunload = function () {
+  sendMessage('bye');
+};
 // /////////////////////////////offer()////////////////////////////////////
 
 function offer(stream, screenFlag) {
@@ -736,7 +739,8 @@ iceAnswerChannel.watch(function (data) {
     console.log('iceAnswer else case ', data);
   }
 });
-////////////////////send data///////////////////////////////////////
+// //////////////////send data in
+// datachannel///////////////////////////////////////
 
 document
   .getElementById('Submit')
@@ -748,7 +752,6 @@ document
 
   for (var key in ans) {
     if (ans.hasOwnProperty(key)) {
-      // console.log(key, (ans[key]).dc1);
       ((ans[key]).dc1).send(name + ' : ' + data);
       console.log('Sent to dc1 channel data: ' + data);
     }
@@ -756,14 +759,35 @@ document
 
   for (var key in off) {
     if (off.hasOwnProperty(key)) {
-      // console.log(key, (off[key]).dc);
       ((off[key]).dc).send(name + ' : ' + data);
       console.log('Sent to dc channel data: ' + data);
     }
   }
+
+  let newData = anchorme((name + ' : ' + data), {
+    attributes: [
+      {
+        name: 'target',
+        value: '_blank'
+      }
+    ],
+    truncate: 20
+  });
+  var ul = document.getElementById('messages-list');
+  var li = document.createElement('li');
+  li.innerHTML = newData;
+  ul.appendChild(li);
 
   document
     .getElementById('message')
     .value = '';
 };
 /////////////////////////////////////////////////////////////////////
+document
+  .getElementById('fileUpload')
+  .addEventListener('change', handleFileUpload, false)
+
+function handleFileUpload(e) {
+  var file = e.target.files[0];
+  console.log(`file is ${file}`);
+}

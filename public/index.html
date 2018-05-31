@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Raghavender Mylagary">
-  <title>Video chat Application</title>  
+  <title>Video chat Application</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <script type="text/javascript" src="js/lib/socketcluster.js"></script>
   <script src="js/lib/adapter.js"></script>
@@ -25,8 +25,11 @@
       <video id="screenshareVideo" controls autoplay playsInline></video>
     </div>
     <div id="webcamDiv">
-    </div>
+    </div>    
     <div class="container">
+      <div class="fileUploader">
+        <input type="file" id="fileUpload" name="files" />
+      </div>
       <div class="messages">
         <ul id="messages-list"></ul>
       </div>
