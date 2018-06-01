@@ -12,8 +12,17 @@ var chatChannel;
 var clientsData = [];
 var events = [];
 var screenFlag = false;
-var dc = '',
-  dc1 = '';
+var receiveBuffer = [];
+var receivedSize = 0;
+
+var bytesPrev = 0;
+var timestampPrev = 0;
+var timestampStart;
+var statsInterval = null;
+var bitrateMax = 0;
+var broadcastfile, file;
+var sendProgress = document.querySelector('progress#progressbar');
+var ul = document.getElementById('messages-list');
 
 //STUN server configuration
 var pc_config = {
@@ -123,7 +132,6 @@ document
       .getElementById('screenshareVideo')
       .srcObject = stream;
     screenShareStream = stream;
-    //screenshareOffer(stream);
     var screenFlag = true;
     offer(stream, screenFlag);
 
@@ -413,40 +421,24 @@ function offer(stream, screenFlag) {
 function createOfferPeerConnection(clientID, stream, screenFlag) {
   try {
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
-
+    var dc;
     try {
       // Note: SCTP-based reliable DataChannels supported in Chrome 29+ ! use
       // {reliable: false} if you have an older version of Chrome
       dc = pc.createDataChannel("sendDataChannel", {reliable: true});
-
       console.log('Created reliable send data channel', dc);
+
+      // Associate handlers with data channel events
+      dc.onopen = handleSendChannelStateChange;
+      dc.onmessage = handleMessage;
+      dc.onclose = handleSendChannelStateChange;
+      dc.binaryType = 'arraybuffer';
     } catch (e) {
       alert('Failed to create data channel!');
       console.log('createDataChannel() failed with following message: ' + e.message);
     }
 
     isInitiator = true;
-
-    // Associate handlers with data channel events
-    dc.onopen = handleSendChannelStateChange;
-    dc.onmessage = function handleMessage(event) {
-      console.log('Received message: ' + event.data);
-      // Show message in the HTML5 page
-      let newData = anchorme(event.data, {
-        attributes: [
-          {
-            name: 'target',
-            value: '_blank'
-          }
-        ],
-        truncate: 20
-      });
-      var ul = document.getElementById('messages-list');
-      var li = document.createElement('li');
-      li.innerHTML = newData;
-      ul.appendChild(li);
-    };;
-    dc.onclose = handleSendChannelStateChange;
 
     // Handler for either 'open' or 'close' events on sender's data channel
     function handleSendChannelStateChange() {
@@ -549,6 +541,7 @@ offerChannel.watch(function (data) {
 ////////////////createAnswerPeerConnection(()//////////////////////////////////
 
 function createAnswerPeerConnection(data) {
+  var dc1;
   try {
     console.log('answer data is ', data);
     var pc = new RTCPeerConnection(pc_config, pc_constraints);
@@ -628,37 +621,26 @@ function createAnswerPeerConnection(data) {
     console.log('Receive Channel Callback: event --> ' + event);
     dc1 = event.channel;
     console.log('dc1 is ' + dc1);
-
+    receivedSize = 0;
+    bitrateMax = 0;
     // Set handlers for the following events: (i) open; (ii) message; (iii) close
     dc1.onopen = handleReceiveChannelStateChange;
-    dc1.onmessage = function handleMessage(event) {
-      console.log('Received message: ' + event.data);
-      // Show message in the HTML5 page
-      let newData = anchorme(event.data, {
-        attributes: [
-          {
-            name: 'target',
-            value: '_blank'
-          }
-        ],
-        truncate: 20
-      });
-      var ul = document.getElementById('messages-list');
-      var li = document.createElement('li');
-      li.innerHTML = newData;
-      ul.appendChild(li);
-    };
-    dc1.onclose = handleReceiveChannelStateChange;
 
-    // Handler for either 'open' or 'close' events on receiver's data channel
-    function handleReceiveChannelStateChange() {
-      var readyState = dc1.readyState;
-      ans[data.from].dc1 = dc1;
-      console.log('dc1 channel state is: ' + dc1.readyState);
-    }
+    dc1.onmessage = handleMessage;
+
+    dc1.onclose = handleReceiveChannelStateChange;
+  }
+
+  // Handler for either 'open' or 'close' events on receiver's data channel
+  function handleReceiveChannelStateChange() {
+    var readyState = dc1.readyState;
+    ans[data.from].dc1 = dc1;
+    console.log('dc1 channel state is: ' + dc1.readyState);    
   }
   return {pc, dc1};
 }
+
+
 
 ////////////////////////answerChannel/////////////////////////////////////
 
@@ -739,8 +721,7 @@ iceAnswerChannel.watch(function (data) {
     console.log('iceAnswer else case ', data);
   }
 });
-// //////////////////send data in
-// datachannel///////////////////////////////////////
+/////////////////send data in datachannel////////////////////
 
 document
   .getElementById('Submit')
@@ -773,7 +754,7 @@ document
     ],
     truncate: 20
   });
-  var ul = document.getElementById('messages-list');
+
   var li = document.createElement('li');
   li.innerHTML = newData;
   ul.appendChild(li);
@@ -788,6 +769,137 @@ document
   .addEventListener('change', handleFileUpload, false)
 
 function handleFileUpload(e) {
-  var file = e.target.files[0];
-  console.log(`file is ${file}`);
+  file = e.target.files[0];
+  console.log('File is ' + [file.name, file.size, file.type, file.lastModifiedDate].join(' '));
+  if (!file) {
+    trace('No file chosen');
+  } else {    
+    client.emit('filemetadata', { name: file.name, size: file.size, type: file.type, lastModifiedDate : file.lastModifiedDate, from : client.id});    
+  }
 }
+
+document.getElementById('sendfile').onclick = sendFileData;
+
+function sendFileData(){
+  // sendProgress.max = file.size;
+  var chunkSize = 16384;
+  var sliceFile = function (offset) {
+    var reader = new window.FileReader();
+    reader.onload = (function () {
+      return function (e) {
+        // dc.send(e.target.result);
+        sendData(e.target.result);
+        if (file.size > offset + e.target.result.byteLength) {
+          window.setTimeout(sliceFile, 0, offset + chunkSize);
+        }
+        sendProgress.value = offset + e.target.result.byteLength;
+      };
+    })(file);
+    var slice = file.slice(offset, offset + chunkSize);
+    reader.readAsArrayBuffer(slice);
+  };
+  sliceFile(0);
+  function sendData(f) {
+
+    for (var key in ans) {
+      if (ans.hasOwnProperty(key)) {
+        ((ans[key]).dc1).send(f);
+        console.log('Sent to dc1 channel data: ' + f);
+      }
+    }
+
+    for (var key in off) {
+      if (off.hasOwnProperty(key)) {
+        ((off[key]).dc).send(f);
+        console.log('Sent to dc channel data: ' + f);
+      }
+    }
+  }
+}
+
+function handleMessage(event) {  
+  if (event.data instanceof ArrayBuffer)
+  {    
+    receiveBuffer.push(event.data);
+    receivedSize += event.data.byteLength;
+    console.log(receivedSize);
+
+    sendProgress.value = receivedSize;
+    // we are assuming that our signaling protocol told about the expected file
+    // size(and name, hash, etc). var file = fileInput.files[0];
+    if (receivedSize === broadcastfile.size) {
+      console.log('Received Message ' + event.data.byteLength);
+      var received = new window.Blob(receiveBuffer);
+      receiveBuffer = [];
+      console.log(URL.createObjectURL(received));
+      if (broadcastfile.type.split('/')[0] == 'image'){
+        var image = new Image();
+        image.src = URL.createObjectURL(received);
+        image.style = 'width: 100%';
+        var li = document.createElement('li');
+        li.append(image);
+        ul.appendChild(li);
+      } else {
+        var downloadAnchor = document.createElement('a');
+        var linkText = document.createTextNode('file download');
+        downloadAnchor.appendChild(linkText);
+        downloadAnchor.href = URL.createObjectURL(received);
+        downloadAnchor.download = broadcastfile.name;
+        downloadAnchor.textContent = 'Click to download \'' + broadcastfile.name + '\' (' + broadcastfile.size + ' bytes)';
+        downloadAnchor.style.display = 'block';
+
+        var li = document.createElement('li');
+        li.append(downloadAnchor);
+        ul.appendChild(li);
+      }
+      
+      receivedSize = 0; //resetting the received size
+      client.emit('filesentnotify', broadcastfile.from);            
+    }
+  } else if(typeof event.data === 'string' || myVar instanceof String) {    
+    console.log('Received message: ' + event.data);
+    // Show    message in the HTML5 page
+    let newData = anchorme(event.data, {
+      attributes: [
+        {
+          name: 'target',
+          value: '_blank'
+        }
+      ],
+      truncate: 20
+    });    
+    var li = document.createElement('li');
+    li.innerHTML = newData;
+    ul.appendChild(li);
+  }  
+}
+
+////////////////////filemetadata///////////////////////////////
+var filemetadataChannel = client.subscribe('filemetadata');
+
+filemetadataChannel.on('subscribeFail', function (err) {
+  console.error('Failed to subscribe to the filemetadata channel due to error: ' + err);
+});
+
+filemetadataChannel.watch(function (data) {
+  console.log('broadcastfile metadata is ', data);
+  broadcastfile = data;
+  sendProgress.max = data.size;
+});
+///////////////////filesentnotify/////////////////////////////
+var filesentnotifyChannel = client.subscribe('filesentnotify');
+
+filesentnotifyChannel.on('subscribeFail', function (err) {
+  console.error('Failed to subscribe to the filesentnotify channel due to error: ' + err);
+});
+
+filesentnotifyChannel.watch(function (data) {
+sendProgress.value = 0;
+  if(client.id == data){
+    var li = document.createElement('li');
+    li.innerHTML = 'file sent successfully';
+    ul.appendChild(li);
+    console.log('append successfull');
+  }
+});
+//////////////////////////////////////////////////////////////

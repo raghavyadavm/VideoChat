@@ -148,6 +148,16 @@ class Worker extends SCWorker {
         console.log('Chat: ', data);
       });
 
+      server.on('filemetadata', function (data) {
+        scServer.exchange.publish('filemetadata', data);
+        console.log('filemetadata: ', data);
+      }); 
+
+      server.on('filesentnotify', function (data) {
+        scServer.exchange.publish('filesentnotify', data);
+        console.log('filesentnotify: ', data);
+      });
+
       server.on('disconnect', function() {
         log.info('User disconnected ', server.id);
         log.info('disconnection ', Object.keys(scServer.clients));
