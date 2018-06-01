@@ -1,7 +1,7 @@
 {
   "name": "videochat",
   "description": "WebRTC based video chat + screenshare + chat",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "contributors": [
     {
       "name": "Raghavender Mylagary",
