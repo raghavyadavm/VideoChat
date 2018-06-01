@@ -25,10 +25,12 @@
       <video id="screenshareVideo" controls autoplay playsInline></video>
     </div>
     <div id="webcamDiv">
-    </div>    
+    </div>
     <div class="container">
       <div class="fileUploader">
         <input type="file" id="fileUpload" name="files" />
+        <button id="sendfile">SendFile</button>
+        <progress id="progressbar" max="0" value="0"></progress>
       </div>
       <div class="messages">
         <ul id="messages-list"></ul>

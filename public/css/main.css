@@ -79,19 +79,16 @@ a {
   border-radius: 30px;
 }
 
-
-
 .container {
   grid-area: chat;
   display: grid;
   grid-template-areas: "file" "messages" "actions";
-  grid-template-rows: 5% 90% 5%;
+  grid-template-rows: 8% 87% 5%;
   grid-template-columns: 100%;
   position: relative;
   height: 100vh;
   border: 3px solid #B40707;
   border-radius: 20px;
-  overflow: auto;
 }
 
 .container ul {
@@ -114,6 +111,12 @@ a {
 .fileUploader {
   grid-area: file;
   display: grid;
+  border-bottom: 3px dotted red;
+  width: 100%;
+}
+
+#progressbar{
+  width: 100%;
 }
 
 .messages {
@@ -126,41 +129,28 @@ a {
 
 .actions {
   grid-area: actions;
-  /* display: grid; */
-  /* position: absolute; */
-  /* max-height: 10vh; */
-  /* width: 100%; */
-  /* bottom: 0; */
-  /* background-color: #CCCCCC;
-  border-top: 1px solid #9E9E9E; */
-}
-
-#form {
-  display: inline;
-  
+  display: grid;
+  border-top: 1px solid #9E9E9E; 
 }
 
 .actions input {
   height: 100%;
   border: 0;
   margin: 0;
-  display:inline-block;
-  /* font-size: 1em; */
-  /* padding: 1.5vh 1vw; */
-  /* width: 80%;*/
-  /* float: left;  */
+  font-size: 1em; 
+  padding: 1vh 1vw; 
+  width: 80%;
+  float: left;
 }
 
 .actions button {
   height: 100%;
   border: 0;
   margin: 0;
-  display:inline-block;
-  /* max-width: 20%; */
+  width: 20%;
   text-align: center;
-  /* font-size: 1em; */
-  /* padding: 1.5vh 1vw; */
-  /* float: right; */
+  font-size: 1em;
+  padding: 1vh 1vw;  
   background-color: #2ecc71;
   color: #FFFFFF;
 }
