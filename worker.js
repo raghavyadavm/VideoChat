@@ -44,6 +44,7 @@ class Worker extends SCWorker {
 
     app.get('/mobile.html', function(req, res, next) {
       let result = parser(req.headers['user-agent']);
+      ua.info('----Mobile Page--------');
       ua.info(result);
       ua.info('browser: ', result.browser); // {name: "Chromium", version: "15.0.874.106"}
       ua.info('device: ', result.device); // {model: undefined, type: undefined, vendor: undefined}
