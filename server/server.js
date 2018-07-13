@@ -1,26 +1,26 @@
 require('dotenv').config();
-var fs = require('fs');
-var path = require('path');
-var argv = require('minimist')(process.argv.slice(2));
-var scHotReboot = require('sc-hot-reboot');
-var fsUtil = require('socketcluster/fsutil');
-var waitForFile = fsUtil.waitForFile;
-var SocketCluster = require('socketcluster');
+const fs = require('fs');
+const path = require('path');
+const argv = require('minimist')(process.argv.slice(2));
+const scHotReboot = require('sc-hot-reboot');
+const fsUtil = require('socketcluster/fsutil');
+const waitForFile = fsUtil.waitForFile;
+const SocketCluster = require('socketcluster');
 
-var workerControllerPath =
+const workerControllerPath =
   argv.wc || process.env.SOCKETCLUSTER_WORKER_CONTROLLER;
-var brokerControllerPath =
+const brokerControllerPath =
   argv.bc || process.env.SOCKETCLUSTER_BROKER_CONTROLLER;
-var workerClusterControllerPath =
+const workerClusterControllerPath =
   argv.wcc || process.env.SOCKETCLUSTER_WORKERCLUSTER_CONTROLLER;
-var environment = process.env.ENV || 'dev';
+const environment = process.env.ENV || 'dev';
 
-var options = {
+const options = {
   workers: Number(argv.w) || Number(process.env.SOCKETCLUSTER_WORKERS) || 1,
   brokers: Number(argv.b) || Number(process.env.SOCKETCLUSTER_BROKERS) || 1,
   port: Number(argv.p) || Number(process.env.SOCKETCLUSTER_PORT) || 8000,
   // You can switch to 'sc-uws' for improved performance.
-  wsEngine: process.env.SOCKETCLUSTER_WS_ENGINE || 'sc-uws',
+  wsEngine: process.env.SOCKETCLUSTER_WS_ENGINE || 'ws',
   appName: 'videochat',
   workerController: workerControllerPath || path.join(__dirname, 'worker.js'),
   brokerController: brokerControllerPath || path.join(__dirname, 'broker.js'),
@@ -44,44 +44,45 @@ var options = {
   crashWorkerOnError: argv['auto-reboot'] != false,
   // If using nodemon, set this to true, and make sure that environment is 'dev'.
   killMasterOnSignal: false,
-  environment: environment,
+  environment,
   protocol: 'https',
-  path: process.env.SOCKETCLUSTER_PATH,
+  path: process.env.SOCKETCLUSTER_PATH || '/',
   protocolOptions: {
-    key: fs.readFileSync(__dirname + '/keys/key.pem', 'utf8'),
-    cert: fs.readFileSync(__dirname + '/keys/cert.pem', 'utf8')
-  }
+    key: fs.readFileSync(`${__dirname}/keys/key.pem`, 'utf8'),
+    cert: fs.readFileSync(`${__dirname}/keys/cert.pem`, 'utf8'),
+  },
 };
 
-var bootTimeout =
+const bootTimeout =
   Number(process.env.SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT) || 10000;
-var SOCKETCLUSTER_OPTIONS;
+let SOCKETCLUSTER_OPTIONS;
 
 if (process.env.SOCKETCLUSTER_OPTIONS) {
   SOCKETCLUSTER_OPTIONS = JSON.parse(process.env.SOCKETCLUSTER_OPTIONS);
 }
 
-for (var i in SOCKETCLUSTER_OPTIONS) {
+for (const i in SOCKETCLUSTER_OPTIONS) {
   if (SOCKETCLUSTER_OPTIONS.hasOwnProperty(i)) {
     options[i] = SOCKETCLUSTER_OPTIONS[i];
   }
 }
 
-var start = function() {
-  var socketCluster = new SocketCluster(options);
+const start = function() {
+  const socketCluster = new SocketCluster(options);
 
-  socketCluster.on(socketCluster.EVENT_WORKER_CLUSTER_START, function(
-    workerClusterInfo
-  ) {
-    console.log('   >> WorkerCluster PID:', workerClusterInfo.pid);
-  });
+  socketCluster.on(
+    socketCluster.EVENT_WORKER_CLUSTER_START,
+    workerClusterInfo => {
+      console.log('   >> WorkerCluster PID:', workerClusterInfo.pid);
+    },
+  );
 
   if (socketCluster.options.environment === 'dev') {
     // This will cause SC workers to reboot when code changes anywhere in the app directory.
     // The second options argument here is passed directly to chokidar.
     // See https://github.com/paulmillr/chokidar#api for details.
     console.log(
-      `   !! The sc-hot-reboot plugin is watching for code changes in the ${__dirname} directory`
+      `   !! The sc-hot-reboot plugin is watching for code changes in the ${__dirname} directory`,
     );
     scHotReboot.attach(socketCluster, {
       cwd: __dirname,
@@ -93,19 +94,19 @@ var start = function() {
         'server.js',
         'broker.js',
         /[\/\\]\./,
-        '*.log'
-      ]
+        '*.log',
+      ],
     });
   }
 };
 
-var bootCheckInterval =
+const bootCheckInterval =
   Number(process.env.SOCKETCLUSTER_BOOT_CHECK_INTERVAL) || 200;
-var bootStartTime = Date.now();
+const bootStartTime = Date.now();
 
 // Detect when Docker volumes are ready.
-var startWhenFileIsReady = filePath => {
-  var errorMessage =
+const startWhenFileIsReady = filePath => {
+  const errorMessage =
     `Failed to locate a controller file at path ${filePath} ` +
     `before SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT`;
 
@@ -114,14 +115,14 @@ var startWhenFileIsReady = filePath => {
     bootCheckInterval,
     bootStartTime,
     bootTimeout,
-    errorMessage
+    errorMessage,
   );
 };
 
-var filesReadyPromises = [
+const filesReadyPromises = [
   startWhenFileIsReady(workerControllerPath),
   startWhenFileIsReady(brokerControllerPath),
-  startWhenFileIsReady(workerClusterControllerPath)
+  startWhenFileIsReady(workerClusterControllerPath),
 ];
 Promise.all(filesReadyPromises)
   .then(() => {

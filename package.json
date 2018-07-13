@@ -55,15 +55,12 @@
   },
   "lint-staged": {
     "*.js": [
-      "npm run lint:eslint:fix",
-      "git add --force"
+      "npm run lint:eslint:fix"
     ],
     "*.json": [
-      "prettier --write",
-      "git add --force"
+      "prettier --write"
     ]
   },
-  "pre-commit": "lint:staged",
   "babel": {
     "plugins": [
       "styled-components"

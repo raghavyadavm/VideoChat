@@ -55,3 +55,5 @@ typings/
 .yarn-integrity
 
 package-lock.json
+
+.vscode
