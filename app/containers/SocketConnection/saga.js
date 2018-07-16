@@ -3,7 +3,6 @@ import socketCluster from 'socketcluster-client';
 
 import { SOCKET_CONNECTION } from './constants';
 import { socketConnectionSuccess, socketConnectionFailure } from './actions';
-import getSocket from 'utils/socket';
 
 export function* socketConnectionSaga() {
   const socketOptions = {
