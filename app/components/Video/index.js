@@ -8,18 +8,24 @@ import React from 'react';
 // import PropTypes from 'prop-types';
 // import styled from 'styled-components';
 
-function Video(props) {
-  return (
-    <video
-      ref={element => {
-        element.srcObject = props.stream;
-      }}
-      id="screenshareVideo"
-      autoPlay
-      playsInline
-      muted
-    />
-  );
+class Video extends React.PureComponent {
+  componentDidMount() {
+    this.videoElement.srcObject = this.props.stream;
+  }
+
+  render() {
+    return (
+      <video
+        ref={element => {
+          this.videoElement = element;
+        }}
+        id="screenshareVideo"
+        autoPlay
+        playsInline
+        muted
+      />
+    );
+  }
 }
 
 Video.propTypes = {};

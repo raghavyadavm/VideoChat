@@ -19,26 +19,40 @@ import saga from './saga';
 import { LOCAL_STATE_NAME } from './constants';
 import { getUserMediaAction } from './actions';
 import Video from '../../components/Video';
-import SocketConnection from '../SocketConnection';
 import MyVideoStyle from './MyVideoStyle';
 
 /* eslint-disable react/prefer-stateless-function */
 export class VideoChat extends React.PureComponent {
+  count = 0;
   componentDidMount() {
     this.props.getUserMedia();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    this.count++;
+    console.log('count ', this.count);
+  }
+
   render() {
+    let video, list;
+    if (this.props.clientsList) {
+      console.log('vc list ', this.props.clientsList);
+      list = this.props.clientsList.map((element)=><li key={element}>{element}</li>)
+    }
+    if (this.props.stream) {
+      console.log(this.props.stream);
+      video = <Video stream={this.props.stream} />;
+    }
     return (
       <div>
         <Helmet>
           <title>VideoChat</title>
           <meta name="description" content="Description of VideoChat" />
         </Helmet>
-        <SocketConnection/>
-        {this.props.stream != null ? (
-          <Video stream={this.props.stream} />
-        ) : null}
+        {video}
+        <ul>
+          {list}
+        </ul>
       </div>
     );
   }

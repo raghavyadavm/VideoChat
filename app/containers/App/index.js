@@ -17,12 +17,13 @@ import { Switch, Route } from 'react-router-dom';
 import HomePage from 'containers/HomePage/Loadable';
 import NotFoundPage from 'containers/NotFoundPage/Loadable';
 import VideoChat from '../VideoChat';
+import SocketConnection from '../SocketConnection';
 
 export default function App() {
   return (
     <div>
       <Switch>
-        <Route exact path="/" component={VideoChat} />
+        <Route exact path="/" component={SocketConnection} />
         <Route component={NotFoundPage} />
       </Switch>
     </div>

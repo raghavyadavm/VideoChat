@@ -113,6 +113,10 @@ module.exports = options => ({
       },
     ],
   },
+  node: {
+    fs: 'empty',
+    child_process: 'empty',
+  },
   plugins: options.plugins.concat([
     new webpack.ProvidePlugin({
       // make fetch available

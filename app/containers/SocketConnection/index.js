@@ -10,27 +10,50 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { compose } from 'redux';
 
+import VideoChat from '../VideoChat';
 import injectSaga from 'utils/injectSaga';
 import injectReducer from 'utils/injectReducer';
-import { makeSelectClient, makeSelectError } from './selectors';
+import * as selectors from './selectors';
 import reducer from './reducer';
 import saga from './saga';
 import { LOCAL_STATE_NAME } from './constants';
-import { socketConnectionAction } from './actions';
-
+import * as actions from './actions';
 
 /* eslint-disable react/prefer-stateless-function */
 export class SocketConnection extends React.PureComponent {
-
   componentDidMount() {
-    this.props.createSocketConnection();
+    console.log(`cdm -- my id is ${this.props.myId}`);
+
+    // this.props.startExchangeEvent();
   }
 
   render() {
-    console.log(this.props.client);
+    console.log('sc list ', this.props.clientsList);
+    console.log(`my id is ${this.props.myId}`);
+    console.log(`chat channel opened ${this.props.chatChannel}`);
+
+    let videoChat = null;
+    let bool = true;
+    if (this.props.myId) {
+      // this.props.startExchangeEvent();
+      if (this.props.clientsList) {
+        console.log(this.props.clientsList);
+        var room = 'foo';
+        if (room !== '') {
+          this.props.createOrJoinEvent(room); // client.emit('create or join', room);
+          console.log('Attempted to create or join room: ', room);
+          videoChat = <VideoChat clientsList={this.props.clientsList} />;
+        }
+      }
+      // if (this.props.clientsList && this.props.clientsList.length > 1) {
+      //   console.log(this.props.clientsList);
+      //   videoChat = <VideoChat clientsList={this.props.clientsList} />;
+      // }
+    }
+
     return <div>
-        {/* <p>{this.props.client}</p>
-        <p>{this.props.error}</p> */}
+        {videoChat}
+      <p>Is chatChannel opened {this.props.chatChannel? 'true': 'false'}</p>
       </div>;
   }
 }
@@ -40,12 +63,17 @@ SocketConnection.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
-  client: makeSelectClient(),
-  error: makeSelectError(),
+  myId: selectors.makeSelectMyID(),
+  error: selectors.makeSelectError(),
+  clientsList: selectors.makeSelectClientsList(),
+  chatChannel: selectors.makeSelectChatChannel(),
 });
 
 function mapDispatchToProps(dispatch) {
-  return { createSocketConnection: () => dispatch(socketConnectionAction()) };
+  return {
+    startExchangeEvent: () => dispatch(actions.startExchange()),
+    createOrJoinEvent: room => dispatch(actions.createOrJoinEmit(room)),
+  };
 }
 
 const withConnect = connect(

@@ -45,12 +45,12 @@ const options = {
   // If using nodemon, set this to true, and make sure that environment is 'dev'.
   killMasterOnSignal: false,
   environment,
-  protocol: 'https',
   path: process.env.SOCKETCLUSTER_PATH || '/',
-  protocolOptions: {
-    key: fs.readFileSync(`${__dirname}/keys/key.pem`, 'utf8'),
-    cert: fs.readFileSync(`${__dirname}/keys/cert.pem`, 'utf8'),
-  },
+  // protocol: 'https',
+  // protocolOptions: {
+  //   key: fs.readFileSync(`${__dirname}/keys/key.pem`, 'utf8'),
+  //   cert: fs.readFileSync(`${__dirname}/keys/cert.pem`, 'utf8'),
+  // },
 };
 
 const bootTimeout =
