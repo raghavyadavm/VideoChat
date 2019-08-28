@@ -19,7 +19,7 @@
     "express": "4.14.0",
     "minimist": "1.1.0",
     "morgan": "1.7.0",
-    "sc-errors": "^1.4.0",
+    "sc-errors": "^2.0.0",
     "sc-framework-health-check": "^2.0.0",
     "sc-hot-reboot": "^1.0.0",
     "scc-broker-client": "^5.0.1",
