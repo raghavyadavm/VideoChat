@@ -25,7 +25,7 @@
     "scc-broker-client": "^5.0.1",
     "serve-static": "1.11.2",
     "simple-node-logger": "^0.93.37",
-    "socketcluster": "^11.3.6",
+    "socketcluster": "^15.0.1",
     "socketcluster-client": "^11.1.0",
     "ua-parser-js": "^0.7.17"
   },
